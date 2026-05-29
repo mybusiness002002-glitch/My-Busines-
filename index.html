@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Premium Telegram Mini App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            tgBg: 'var(--tg-theme-bg-color, #0f172a)',
+            tgSecBg: 'var(--tg-theme-secondary-bg-color, #1e293b)',
+            tgText: 'var(--tg-theme-text-color, #f8fafc)',
+            tgHint: 'var(--tg-theme-hint-color, #94a3b8)',
+            tgLink: 'var(--tg-theme-link-color, #38bdf8)',
+            tgBtn: 'var(--tg-theme-button-color, #0284c7)',
+            tgBtnText: 'var(--tg-theme-button-text-color, #ffffff)',
+            brandGold: '#f59e0b',
+            brandGreen: '#10b981'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: rgb(15 23 42);
+      color: #f8fafc;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+    .active-nav {
+      color: #38bdf8 !important;
+      transform: translateY(-2px);
+    }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* Spin Wheel Animation Helper */
+    #wheel {
+      transition: transform 5s cubic-bezier(0.1, 0.8, 0.1, 1);
+    }
+    
+    /* Adsterra Native Banner Wrappers to Ensure Center Alignment */
+    .ad-slot {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 12px auto;
+      min-height: 60px;
+      width: 100%;
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px dashed rgba(148, 163, 184, 0.2);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased hide-scrollbar pb-24 selection:bg-sky-500/30">
+
+  <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col px-4 pt-3">
+    
+    <header class="flex items-center justify-between bg-slate-800/80 backdrop-blur-md p-3.5 rounded-2xl border border-slate-700/50 shadow-xl mb-4">
+      <div class="flex items-center gap-2.5 cursor-pointer" onclick="openProfileModal()">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center font-bold text-white border-2 border-slate-600 shadow-inner" id="userAvatar">
+          U
+        </div>
+        <div>
+          <h4 class="text-xs text-slate-400 font-medium leading-none">Welcome</h4>
+          <span class="text-sm font-bold text-white block mt-1" id="topUsername">Loading...</span>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <div class="bg-slate-900/90 px-3.5 py-1.5 rounded-xl border border-slate-700 flex items-center gap-2 shadow-inner">
+          <svg class="w-5 h-5 text-amber-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path d="M8.433 7.418c.554-.589 1.448-.589 2.002 0l.207.22 1.135-.504-.139-.323c-.765-1.782-2.696-2.68-4.562-2.098L6.22 5.006l1.136.504.22-.224zm6.03 4.104l-1.136-.504-.22.224c-.554.589-1.448.589-2.002 0l-.207-.22-1.135.504.139.323c.765 1.782 2.696 2.68 4.562 2.098l.857-.293-1.136-.504z"></path><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"></path></svg>
+          <span class="text-base font-extrabold text-amber-400 tracking-wide" id="globalBalance">0</span>
+        </div>
+        <button onclick="navigateTo('wallet')" class="p-2 rounded-xl bg-slate-700/60 border border-slate-600 hover:bg-slate-700 transition">
+          <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      
+      <section id="page-home" class="page-view space-y-4">
+        <div class="ad-slot" id="banner-h1">
+          <script>
+            atOptions = { 'key' : '6d4548399c7d8427045521b68a6452bd', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} };
+          </script>
+          <script src="https://freshmanhow.com/6d4548399c7d8427045521b68a6452bd/invoke.js"></script>
+        </div>
+
+        <div class="bg-slate-800/60 backdrop-blur-md rounded-2xl p-5 border border-slate-700/60 shadow-xl text-center relative overflow-hidden">
+          <div class="flex justify-center mb-2">
+            <span class="bg-indigo-500/10 text-indigo-400 text-xs px-3 py-1 rounded-full border border-indigo-500/20 font-semibold" id="spinLimitDisplay">Spins Left: 21/21</span>
+          </div>
+
+          <div class="flex bg-slate-900/80 p-1 rounded-xl mb-5 max-w-xs mx-auto border border-slate-800">
+            <button id="btn-mode-manual" onclick="switchSpinMode('manual')" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all bg-sky-500 text-white">Manual Wheel</button>
+            <button id="btn-mode-auto" onclick="switchSpinMode('auto')" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-slate-400">Auto Spin Loop</button>
+          </div>
+
+          <div class="relative w-64 h-64 mx-auto mb-6 flex items-center justify-center">
+            <div class="absolute -top-1 z-20 text-rose-500 drop-shadow-[0_4px_6px_rgba(0,0,0,0.6)]">
+              <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            </div>
+            <canvas id="wheel" width="250" height="250" class="rounded-full shadow-[0_0_25px_rgba(56,189,248,0.2)] border-4 border-slate-700"></canvas>
+            <div class="absolute w-10 h-10 bg-gradient-to-b from-slate-700 to-slate-900 rounded-full border-4 border-slate-600 shadow-2xl z-10 flex items-center justify-center">
+              <div class="w-2 h-2 bg-sky-400 rounded-full animate-ping"></div>
+            </div>
+          </div>
+
+          <div id="manual-controls" class="space-y-3">
+            <button id="spinBtn" onclick="processManualSpin()" class="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-extrabold py-3.5 px-6 rounded-xl shadow-lg shadow-sky-500/20 active:scale-[0.98] transition transform tracking-wider">SPIN WHEEL</button>
+            <button id="claimSpinBtn" onclick="claimManualSpinReward()" class="w-full hidden bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-extrabold py-3.5 px-6 rounded-xl shadow-lg active:scale-[0.98] transition tracking-wider">CLAIM WINNINGS</button>
+          </div>
+
+          <div id="auto-controls" class="hidden grid grid-cols-2 gap-3">
+            <button id="autoSpinStartBtn" onclick="startAutoSpinLoop()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold py-3.5 rounded-xl transition tracking-wide shadow-lg shadow-emerald-500/10">START AUTO</button>
+            <button id="autoSpinStopBtn" onclick="stopAutoSpinLoop()" disabled class="bg-rose-500/50 text-white/50 font-extrabold py-3.5 rounded-xl cursor-not-allowed transition tracking-wide">STOP</button>
+          </div>
+        </div>
+
+        <div class="ad-slot" id="banner-h2">
+          <script>
+            atOptions = { 'key' : '49ff65b4d05691cf1c55536915399d49', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
+          </script>
+          <script src="https://freshmanhow.com/49ff65b4d05691cf1c55536915399d49/invoke.js"></script>
+        </div>
+
+        <div class="bg-slate-800/60 backdrop-blur-md rounded-2xl p-5 border border-slate-700/60 shadow-xl">
+          <h3 class="text-sm font-bold tracking-wide text-slate-300 uppercase mb-4 flex items-center gap-2">
+            <span class="w-2 h-2 bg-amber-500 rounded-full animate-bounce"></span> Daily Check-in Streak
+          </h3>
+          <div class="grid grid-cols-4 gap-2.5 mb-4" id="dailyGrid">
+            </div>
+          <button id="dailyClaimBtn" onclick="claimDailyReward()" class="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-xl border border-slate-600 transition">Claim Daily Streak</button>
+        </div>
+
+        <div class="ad-slot" id="banner-h3">
+          <script>
+            atOptions = { 'key' : 'b8efd521c8d39185d1f399d99cf8ebfb', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {} };
+          </script>
+          <script src="https://freshmanhow.com/b8efd521c8d39185d1f399d99cf8ebfb/invoke.js"></script>
+        </div>
+      </section>
+
+
+      <section id="page-tasks" class="page-view hidden space-y-4">
+        <div class="ad-slot" id="banner-t1"><script async="async" data-cfasync="false" src="https://freshmanhow.com/5e09aa5f4dc2ec876a9877c5afb58c50/invoke.js"></script><div id="container-5e09aa5f4dc2ec876a9877c5afb58c50"></div></div>
+        
+        <div class="bg-slate-800/60 backdrop-blur-md rounded-2xl p-4 border border-slate-700/60 shadow-xl">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wide">Available Tasks</h3>
+            <span class="text-xs text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-md border border-sky-500/20 font-medium" id="taskLimitDisplay">0/500 Left</span>
+          </div>
+          
+          <div class="space-y-3">
+            <div class="bg-slate-900/60 border border-slate-800 p-3.5 rounded-xl flex items-center justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-sky-500/10 text-sky-400 rounded-xl border border-sky-500/20">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-white">Premium Ad Stream</h4>
+                  <p class="text-xs text-amber-400 font-bold mt-0.5">+70 Coins</p>
+                </div>
+              </div>
+              <button onclick="triggerStandardVideoTask()" class="px-4 py-1.5 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-lg shadow transition">Go</button>
+            </div>
+
+            <div class="bg-slate-900/60 border border-slate-800 p-3.5 rounded-xl flex items-center justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 15H19M9 11l3-3m0 0l3 3m-3-3v8"></path></svg>
+                </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-white">Auto Video Stream Loop</h4>
+                  <p class="text-xs text-amber-400 font-bold mt-0.5">+70 Coins / loop</p>
+                </div>
+              </div>
+              <button id="taskAutoBtn" onclick="toggleAutoVideoTaskLoop()" class="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg shadow transition">Start Auto</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ad-slot" id="banner-t2"></div>
+        <div class="ad-slot" id="banner-t3"></div>
+      </section>
+
+
+      <section id="page-referral" class="page-view hidden space-y-4">
+        <div class="ad-slot" id="banner-r1"></div>
+
+        <div class="bg-slate-800/60 backdrop-blur-md rounded-2xl p-5 border border-slate-700/60 shadow-xl space-y-5">
+          <div>
+            <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wide mb-2">Your Invite Link</h3>
+            <div class="flex gap-2">
+              <input type="text" id="refLinkInput" readonly class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 flex-1 focus:outline-none tracking-tight" value="https://t.me/BotName/app?startapp=">
+              <button onclick="copyReferralLink()" class="px-4 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-xl transition shadow active:scale-95">Copy</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 pt-2">
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-center">
+              <span class="text-xs text-slate-400 block font-medium mb-1">Total Invites</span>
+              <span class="text-xl font-black text-white" id="refCount">0</span>
+            </div>
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-center">
+              <span class="text-xs text-slate-400 block font-medium mb-1">Referral Earnings</span>
+              <span class="text-xl font-black text-amber-400" id="refEarnings">0</span>
+            </div>
+          </div>
+
+          <div class="bg-indigo-500/5 rounded-xl border border-indigo-500/10 p-3.5">
+            <h4 class="text-xs font-bold text-indigo-400 mb-1.5 uppercase">Rules & Rewards</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">Earn <span class="text-amber-400 font-bold">400 Coins</span> instantly for each active user you invite! Reward settles as soon as your referral processes their first task or spins the core wheel.</p>
+          </div>
+        </div>
+
+        <div class="ad-slot" id="banner-r2"></div>
+        <div class="ad-slot" id="banner-r3"></div>
+      </section>
+
+
+      <section id="page-wallet" class="page-view hidden space-y-4">
+        <div class="ad-slot" id="banner-w1"></div>
+
+        <div class="bg-gradient-to-br from-slate-800 via-slate-800 to-indigo-950 rounded-2xl p-6 border border-slate-700/60 shadow-xl text-center relative overflow-hidden">
+          <div class="absolute -right-10 -top-10 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl"></div>
+          <span class="text-xs text-slate-400 font-bold tracking-widest uppercase block mb-1">Account Net Worth</span>
+          <h2 class="text-3xl font-black text-amber-400 tracking-wide mb-1" id="walletBalance">0</h2>
+          <p class="text-xs text-slate-400 font-medium" id="equivalentValue">≈ 0.00 BDT</p>
+        </div>
+
+        <div class="bg-slate-800/60 backdrop-blur-md rounded-2xl p-5 border border-slate-700/60 shadow-xl space-y-4">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wide border-b border-slate-700/60 pb-2">💵 Secure Withdrawal</h3>
+          
+          <div>
+            <label class="text-xs font-semibold text-slate-400 block mb-1.5">Select Pement Method</label>
+            <select id="withdrawMethod" class="w-full bg-slate-900 border border-slate-700 text-slate-300 rounded-xl p-2.5 text-xs focus:outline-none focus:border-sky-500">
+              <option value="bkash">Bkash (Mobile Wallet)</option>
+              <option value="nagad">Nagad (Mobile Wallet)</option>
+              <option value="usdt">USDT (TRC20 Network Address)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-400 block mb-1.5">Recipient Target Account Address</label>
+            <input type="text" id="withdrawAddress" placeholder="Enter phone number or crypto address" class="w-full bg-slate-900 border border-slate-700 text-slate-300 rounded-xl p-2.5 text-xs focus:outline-none focus:border-sky-500 placeholder:text-slate-600">
+          </div>
+
+          <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-800 text-2xs text-slate-400 space-y-1">
+            <div class="flex justify-between"><span class="font-medium">Minimum Limit:</span> <span class="font-bold text-white">10,000,000 Coins (10,000 BDT / Rate Equiv)</span></div>
+            <div id="req-ref-status" class="flex justify-between"><span class="font-medium">Referrals Required:</span> <span class="font-bold text-rose-400">7 Active Users (0/7)</span></div>
+          </div>
+
+          <button onclick="processWithdrawalSubmission()" class="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white text-xs font-extrabold py-3.5 rounded-xl shadow-md transition transform tracking-wide active:scale-98">SUBMIT PAYOUT REQUEST</button>
+        </div>
+
+        <div class="bg-slate-800/60 backdrop-blur-md rounded-2xl p-5 border border-slate-700/60 shadow-xl space-y-4">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wide border-b border-slate-700/60 pb-2">🔄 Coin Swapping Terminal</h3>
+          <p class="text-2xs text-slate-400 leading-relaxed">Swap digital points directly into fiat. Conversion Rate Index: <span class="text-amber-400 font-bold">10,000 Coins = 5 BDT</span>. Swapping unlocks processing mechanisms requiring security clearance validation steps.</p>
+          
+          <button onclick="processTokenExchange()" class="w-full bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-3 rounded-xl border border-slate-600 transition tracking-wide">CONVERT POINTS TO FIAT CASH</button>
+        </div>
+
+        <div class="ad-slot" id="banner-w2"></div>
+      </section>
+
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900/90 backdrop-blur-lg border-t border-slate-800 py-3.5 px-6 flex justify-between items-center z-40 rounded-t-2xl shadow-[0_-10px_25px_rgba(0,0,0,0.5)]">
+      <button id="nav-home" onclick="navigateTo('home')" class="flex flex-col items-center gap-1 text-slate-500 transition-all duration-300 hover:text-slate-300">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+        <span class="text-2xs font-extrabold tracking-wide">Home</span>
+      </button>
+      <button id="nav-tasks" onclick="navigateTo('tasks')" class="flex flex-col items-center gap-1 text-slate-500 transition-all duration-300 hover:text-slate-300">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+        <span class="text-2xs font-extrabold tracking-wide">Tasks</span>
+      </button>
+      <button id="nav-referral" onclick="navigateTo('referral')" class="flex flex-col items-center gap-1 text-slate-500 transition-all duration-300 hover:text-slate-300">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        <span class="text-2xs font-extrabold tracking-wide">Ref</span>
+      </button>
+      <button id="nav-wallet" onclick="navigateTo('wallet')" class="flex flex-col items-center gap-1 text-slate-500 transition-all duration-300 hover:text-slate-300">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span class="text-2xs font-extrabold tracking-wide">Wallet</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <div id="adModal" class="fixed inset-0 bg-slate-950/95 z-50 hidden flex items-center justify-center p-6 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-6 text-center space-y-5 relative shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <span class="text-2xs font-bold text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-md uppercase tracking-widest" id="adModalTypeTag">Adsterra Sponsored Network</span>
+        <span class="text-xs font-bold text-slate-400" id="adModalLoopCounter">Ad 1 of 1</span>
+      </div>
+      
+      <div class="py-4 flex justify-center items-center flex-col min-h-[100px]" id="adDynamicInjectionHook">
+         <p class="text-xs text-slate-500 italic mb-2">Streaming Ad Component Payload Data...</p>
+         <div class="w-16 h-16 rounded-full border-4 border-t-sky-500 border-slate-800 animate-spin mb-1"></div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+          <div id="adProgressBar" class="bg-gradient-to-r from-sky-400 to-indigo-500 h-full w-0 transition-all duration-1000 linear"></div>
+        </div>
+        <div class="flex justify-between text-2xs font-semibold text-slate-500">
+          <span>Do not close this stream app screen</span>
+          <span id="adTimerDisplay">0s remaining</span>
+        </div>
+      </div>
+      <button id="adCloseBtn" disabled class="w-full py-3 bg-slate-800 text-slate-500 text-xs font-bold rounded-xl cursor-not-allowed transition">LOCK STREAMING TIME LOCK</button>
+    </div>
+  </div>
+
+  <div id="profileModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-6 backdrop-blur-sm" onclick="closeProfileModal()">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-xs rounded-2xl p-5 text-left space-y-4 shadow-2xl" onclick="event.stopPropagation()">
+      <h3 class="text-sm font-bold text-white uppercase tracking-wider border-b border-slate-800 pb-2">User Profile Summary</h3>
+      <div class="space-y-2.5 text-xs">
+        <div class="flex justify-between"><span class="text-slate-400">Telegram UID:</span><span class="font-mono font-bold text-white" id="profID">N/A</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Username:</span><span class="font-bold text-sky-400" id="profUser">N/A</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Joined Date:</span><span class="font-bold text-slate-300" id="profJoin">N/A</span></div>
+        <div class="flex justify-between border-t border-slate-800 pt-2 mt-2"><span class="text-slate-400 font-bold">Total Earnings:</span><span class="font-black text-amber-400" id="profCoins">0 Coins</span></div>
+      </div>
+      <button onclick="closeProfileModal()" class="w-full py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl border border-slate-700 hover:bg-slate-700 transition mt-2">Close Account Details</button>
+    </div>
+  </div>
+
+
+  <script>
+    // --- APP CORE ARCHITECTURE STATES ---
+    let userState = {
+      uid: "109827364",
+      username: "Guest_User",
+      firstName: "Guest",
+      balance: 1250,
+      lastDailyClaim: null,
+      spinCount: 21,
+      spinResetTimestamp: Date.now(),
+      taskCount: 500,
+      taskResetTimestamp: Date.now(),
+      refCount: 3,
+      refEarnings: 1200,
+      joinDate: new Date().toLocaleDateString()
+    };
+
+    const WHEEL_SECTOR_REWARDS = [50, 70, 90, 100, 120, 140, 150, 0]; // 0 mirrors "Try Again"
+    const WHEEL_SECTOR_LABELS = ["50", "70", "90", "100", "120", "140", "150", "Try Again"];
+    const COIN_EXCHANGE_FIAT_INDEX = 10000 / 5; // 10000 Coins = 5 BDT
+    
+    let currentSpinMode = 'manual';
+    let manualSpinWinCache = null;
+    let isAutoSpinRunning = false;
+    let isAutoTaskRunning = false;
+
+    // --- TELEGRAM MINI APP INITIALIZATION ENGINE ---
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        userState.uid = tg.initDataUnsafe.user.id.toString();
+        userState.username = tg.initDataUnsafe.user.username || "tg_user";
+        userState.firstName = tg.initDataUnsafe.user.first_name || "User";
+      }
+    }
+
+    // --- LOCAL STORAGE CORE HYDRATION ENGINE ---
+    function loadStateFromPersistence() {
+      const stored = localStorage.getItem('tg_mini_app_state_prod');
+      if (stored) {
+        try {
+          userState = { ...userState, ...JSON.parse(stored) };
+        } catch(e) { console.error("Persistence hydration structural fail", e); }
+      }
+      enforceTimeIntervalLimits();
+      updateGlobalInterfaceDisplays();
+    }
+
+    function saveStateToPersistence() {
+      localStorage.setItem('tg_mini_app_state_prod', JSON.stringify(userState));
+      updateGlobalInterfaceDisplays();
+    }
+
+    function enforceTimeIntervalLimits() {
+      const now = Date.now();
+      // 4-Hour Spin Limit Enforcement (4 Hours = 14400000 ms)
+      if (now - userState.spinResetTimestamp >= 14400000) {
+        userState.spinCount = 21;
+        userState.spinResetTimestamp = now;
+      }
+      // 28-Hour Auto-Spin/Task Reset Rule (28 Hours = 100800000 ms)
+      if (now - userState.taskResetTimestamp >= 100800000) {
+        userState.taskCount = 500;
+        userState.taskResetTimestamp = now;
+      }
+    }
+
+    function updateGlobalInterfaceDisplays() {
+      document.getElementById('globalBalance').innerText = userState.balance.toLocaleString();
+      document.getElementById('walletBalance').innerText = userState.balance.toLocaleString() + " Coins";
+      document.getElementById('equivalentValue').innerText = `≈ ${(userState.balance / COIN_EXCHANGE_FIAT_INDEX).toFixed(2)} BDT`;
+      document.getElementById('topUsername').innerText = userState.firstName;
+      document.getElementById('userAvatar').innerText = userState.firstName.charAt(0).toUpperCase();
+      
+      document.getElementById('spinLimitDisplay').innerText = `Spins Left: ${userState.spinCount}/${currentSpinMode === 'manual' ? 21 : 100}`;
+      document.getElementById('taskLimitDisplay').innerText = `${userState.taskCount}/500 Left`;
+      
+      document.getElementById('refLinkInput').value = `https://t.me/BotName/app?startapp=${userState.uid}`;
+      document.getElementById('refCount').innerText = userState.refCount;
+      document.getElementById('refEarnings').innerText = userState.refEarnings.toLocaleString();
+      
+      const reqRefStatusNode = document.getElementById('req-ref-status');
+      if (userState.refCount >= 7) {
+        reqRefStatusNode.innerHTML = `<span class="font-medium">Referrals Required:</span> <span class="font-bold text-emerald-400">Passed Requirements (${userState.refCount}/7)</span>`;
+      } else {
+        reqRefStatusNode.innerHTML = `<span class="font-medium">Referrals Required:</span> <span class="font-bold text-rose-400">7 Active Users (${userState.refCount}/7)</span>`;
+      }
+    }
+
+    // --- CLIENT SIDE ROUTING ENGINE ---
+    function navigateTo(pageId) {
+      document.querySelectorAll('.page-view').forEach(p => p.classList.add('hidden'));
+      document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-nav'));
+      
+      document.getElementById(`page-${pageId}`).classList.remove('hidden');
+      document.getElementById(`nav-${pageId}`).classList.add('active-nav');
+      window.scrollTo(0, 0);
+    }
+
+    // --- HIGHLY CONFIGURED ADVANCED ADSTERRA MODAL SIMULATOR ENGINE ---
+    function executeAdsterraPipelineSimulation(type, doublePack, durationSeconds, callback) {
+      const modal = document.getElementById('adModal');
+      const progress = document.getElementById('adProgressBar');
+      const timerText = document.getElementById('adTimerDisplay');
+      const closeBtn = document.getElementById('adCloseBtn');
+      const counterText = document.getElementById('adModalLoopCounter');
+      const tagText = document.getElementById('adModalTypeTag');
+      const adHook = document.getElementById('adDynamicInjectionHook');
+
+      tagText.innerText = `Adsterra Sponsored Network (${type})`;
+      modal.classList.remove('hidden');
+      
+      // Injecting dynamic target runtime verification
+      if (type === 'Adsterra-A') {
+        adHook.innerHTML = `<script src='//libtl.com/sdk.js' data-zone='11072165' data-sdk='show_11072165'><\/script><p class='text-xs text-slate-400 mt-2 font-mono'>Zone ID: 11072165 Activated</p>`;
+      } else {
+        adHook.innerHTML = `<div class='p-3 bg-slate-900 border border-indigo-500/20 rounded-xl text-center text-2xs text-slate-400'><p class='text-indigo-400 font-bold mb-1'>Adsterra Premium B-Stream Direct</p>Hash-Verified Asset Pipeline Connected</div>`;
+      }
+
+      let currentIteration = 1;
+      const targetIterations = doublePack ? 2 : 1;
+
+      function runSingleAdTimer() {
+        counterText.innerText = `Ad ${currentIteration} of ${targetIterations}`;
+        progress.style.width = '0%';
+        closeBtn.disabled = true;
+        closeBtn.innerText = "STREAM TIME-LOCKED";
+        closeBtn.className = "w-full py-3 bg-slate-800 text-slate-500 text-xs font-bold rounded-xl cursor-not-allowed transition";
+
+        let remaining = durationSeconds;
+        timerText.innerText = `${remaining}s remaining`;
+
+        // Small delay to let transition register DOM lifecycle
+        setTimeout(() => {
+          progress.style.transitionDuration = `${durationSeconds}s`;
+          progress.style.width = '100%';
+        }, 50);
+
+        const countdownInterval = setInterval(() => {
+          remaining--;
+          if (remaining <= 0) {
+            clearInterval(countdownInterval);
+            if (currentIteration < targetIterations) {
+              currentIteration++;
+              progress.style.transitionDuration = '0s';
+              runSingleAdTimer();
+            } else {
+              // Entire Pipeline Cycle Complete
+              progress.style.transitionDuration = '0.5s';
+              closeBtn.disabled = false;
+              closeBtn.innerText = "COMPLETE & CONTINUE";
+              closeBtn.className = "w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold rounded-xl cursor-pointer shadow-lg";
+              closeBtn.onclick = () => {
+                modal.classList.add('hidden');
+                if (callback) callback();
+              };
+            }
+          } else {
+            timerText.innerText = `${remaining}s remaining`;
+          }
+        }, 1000);
+      }
+
+      runSingleAdTimer();
+    }
+
+    // --- CANVAS ENGINE FOR RENDER GRAPHICS WHEEL ---
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    
+    function drawWheel() {
+      const segments = WHEEL_SECTOR_LABELS.length;
+      const radius = canvas.width / 2;
+      const angle = (2 * Math.PI) / segments;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < segments; i++) {
+        ctx.beginPath();
+        ctx.moveTo(radius, radius);
+        ctx.arc(radius, radius, radius - 6, i * angle, (i + 1) * angle);
+        
+        // Premium alternates styling color palette
+        if (WHEEL_SECTOR_LABELS[i] === "Try Again") {
+          ctx.fillStyle = '#f43f5e';
+        } else {
+          ctx.fillStyle = i % 2 === 0 ? '#1e293b' : '#334155';
+        }
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+        ctx.stroke();
+
+        // Text Drawing Configuration Matrix
+        ctx.save();
+        ctx.translate(radius, radius);
+        ctx.rotate(i * angle + angle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = i % 2 === 0 ? '#f8fafc' : '#38bdf8';
+        if (WHEEL_SECTOR_LABELS[i] === "Try Again") ctx.fillStyle = '#ffffff';
+        ctx.font = "bold 12px Inter";
+        ctx.fillText(WHEEL_SECTOR_LABELS[i], radius - 25, 5);
+        ctx.restore();
+      }
+    }
+
+    // --- SPIN WHEEL CORE INTERACTION SYSTEMS ---
+    function switchSpinMode(mode) {
+      if (isAutoSpinRunning) return;
+      currentSpinMode = mode;
+      
+      const manualTab = document.getElementById('btn-mode-manual');
+      const autoTab = document.getElementById('btn-mode-auto');
+      const manualCtrl = document.getElementById('manual-controls');
+      const autoCtrl = document.getElementById('auto-controls');
+
+      if (mode === 'manual') {
+        manualTab.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all bg-sky-500 text-white";
+        autoTab.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-slate-400";
+        manualCtrl.classList.remove('hidden');
+        autoCtrl.classList.add('hidden');
+      } else {
+        autoTab.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all bg-indigo-500 text-white";
+        manualTab.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-slate-400";
+        autoCtrl.classList.remove('hidden');
+        manualCtrl.classList.add('hidden');
+      }
+      enforceTimeIntervalLimits();
+      updateGlobalInterfaceDisplays();
+    }
+
+    function processManualSpin() {
+      enforceTimeIntervalLimits();
+      if (userState.spinCount <= 0) {
+        alert("Your 4-Hour interval limits have expired! Wait for reset.");
+        return;
+      }
+
+      const isFirstFree = (userState.spinCount === 21);
+
+      if (isFirstFree) {
+        triggerWheelRotationEngine();
+      } else {
+        // Requires Adsterra-A Ad view before spin action trigger executes
+        executeAdsterraPipelineSimulation('Adsterra-A', false, 10, () => {
+          triggerWheelRotationEngine();
+        });
+      }
+    }
+
+    function triggerWheelRotationEngine() {
+      document.getElementById('spinBtn').disabled = true;
+      document.getElementById('spinBtn').innerText = "SPINNING...";
+      
+      // Force safe system bounds constraint selection index array [0-3] (50, 70, 90, 100)
+      const allowedIndices = [0, 1, 2, 3];
+      const selectedIndex = allowedIndices[Math.floor(Math.random() * allowedIndices.length)];
+      
+      const segments = WHEEL_SECTOR_LABELS.length;
+      const anglePerSegment = 360 / segments;
+      
+      // Computing targeting rotation offset parameters cleanly
+      const targetAngle = 360 - (selectedIndex * anglePerSegment) - (anglePerSegment / 2);
+      const totalRotation = 1800 + targetAngle; // 5 absolute full base velocity spins
+
+      const wheelCanvas = document.getElementById('wheel');
+      wheelCanvas.style.transform = `rotate(${totalRotation}deg)`;
+
+      setTimeout(() => {
+        manualSpinWinCache = WHEEL_SECTOR_REWARDS[selectedIndex];
+        document.getElementById('spinBtn').classList.add('hidden');
+        
+        const claimBtn = document.getElementById('claimSpinBtn');
+        claimBtn.classList.remove('hidden');
+        claimBtn.innerText = `CLAIM ${manualSpinWinCache} COINS`;
+      }, 5050); // Exact sync matches layout CSS easing timers declarations
+    }
+
+    function claimManualSpinReward() {
+      executeAdsterraPipelineSimulation('Adsterra-A', false, 10, () => {
+        userState.balance += manualSpinWinCache;
+        userState.spinCount--;
+        
+        // Reset element parameters values
+        manualSpinWinCache = null;
+        const wheelCanvas = document.getElementById('wheel');
+        wheelCanvas.style.transition = 'none';
+        wheelCanvas.style.transform = 'rotate(0deg)';
+        setTimeout(() => wheelCanvas.style.transition = 'transform 5s cubic-bezier(0.1, 0.8, 0.1, 1)', 50);
+
+        document.getElementById('claimSpinBtn').classList.add('hidden');
+        const spinBtn = document.getElementById('spinBtn');
+        spinBtn.classList.remove('hidden');
+        spinBtn.disabled = false;
+        spinBtn.innerText = "SPIN WHEEL";
+        
+        saveStateToPersistence();
+      });
+    }
+
+    // --- AUTO SPIN SYSTEM ENGINE ---
+    function startAutoSpinLoop() {
+      if (userState.spinCount <= 0) {
+        alert("No loop allocations remaining inside limit.");
+        return;
+      }
+      isAutoSpinRunning = true;
+      document.getElementById('autoSpinStartBtn').disabled = true;
+      document.getElementById('autoSpinStartBtn').innerText = "RUNNING...";
+      document.getElementById('autoSpinStopBtn').disabled = false;
+      document.getElementById('autoSpinStopBtn').className = "bg-rose-500 hover:bg-rose-600 text-white font-extrabold py-3.5 rounded-xl transition tracking-wide shadow-lg shadow-rose-500/10";
+      
+      executeAutoSpinIteration();
+    }
+
+    function stopAutoSpinLoop() {
+      isAutoSpinRunning = false;
+      document.getElementById('autoSpinStartBtn').disabled = false;
+      document.getElementById('autoSpinStartBtn').innerText = "START AUTO";
+      document.getElementById('autoSpinStopBtn').disabled = true;
+      document.getElementById('autoSpinStopBtn').className = "bg-rose-500/50 text-white/50 font-extrabold py-3.5 rounded-xl cursor-not-allowed transition tracking-wide";
+    }
+
+    function executeAutoSpinIteration() {
+      if (!isAutoSpinRunning) return;
+      enforceTimeIntervalLimits();
+
+      if (userState.spinCount <= 0) {
+        alert("Auto loop constraints satisfied or interval bounds expired.");
+        stopAutoSpinLoop();
+        return;
+      }
+
+      // Requirement: Back-To-Back Double Adsterra-A Video stream ads (20s combined length simulation matrix)
+      executeAdsterraPipelineSimulation('Adsterra-A', true, 10, () => {
+        // Fast processing automated rotation calculation
+        const allowedIndices = [0, 1, 2, 3];
+        const selectedIndex = allowedIndices[Math.floor(Math.random() * allowedIndices.length)];
+        const prize = WHEEL_SECTOR_REWARDS[selectedIndex];
+
+        const wheelCanvas = document.getElementById('wheel');
+        const anglePerSegment = 360 / WHEEL_SECTOR_LABELS.length;
+        const targetAngle = 360 - (selectedIndex * anglePerSegment) - (anglePerSegment / 2);
+        
+        wheelCanvas.style.transition = 'transform 2s cubic-bezier(0.1, 0.8, 0.1, 1)';
+        wheelCanvas.style.transform = `rotate(${720 + targetAngle}deg)`;
+
+        setTimeout(() => {
+          userState.balance += prize;
+          userState.spinCount--;
+          saveStateToPersistence();
+
+          // Instant layout rotation reset
+          wheelCanvas.style.transition = 'none';
+          wheelCanvas.style.transform = 'rotate(0deg)';
+
+          // Recursion chain sequence hook
+          setTimeout(() => {
+            if (isAutoSpinRunning) executeAutoSpinIteration();
+          }, 200);
+        }, 2100);
+      });
+    }
+
+    // --- DAILY STREAK ENGINE SYSTEM ---
+    const STREAK_VALUES = [10, 20, 30, 50, 70, 90, 100];
+    
+    function renderDailyStreakModule() {
+      const grid = document.getElementById('dailyGrid');
+      grid.innerHTML = '';
+      
+      const todayIdx = getCurrentStreakDayIndex();
+
+      for (let i = 0; i < 7; i++) {
+        const isClaimed = i < todayIdx;
+        const isCurrent = i === todayIdx;
+        
+        let cardStyle = "bg-slate-900 border-slate-800 text-slate-500";
+        if (isClaimed) cardStyle = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold";
+        if (isCurrent) cardStyle = "bg-gradient-to-b from-sky-500/20 to-indigo-500/20 border-sky-400 ring-2 ring-sky-400/30 text-sky-400 font-black scale-105";
+
+        grid.innerHTML += `
+          <div class="border rounded-xl p-2.5 text-center transition ${cardStyle}">
+            <div class="text-2xs uppercase tracking-tight opacity-70">Day ${i+1}</div>
+            <div class="text-xs font-extrabold mt-1">${STREAK_VALUES[i]}</div>
+            <div class="text-3xs mt-0.5 opacity-80">${isClaimed ? '✓' : (isCurrent ? 'NOW' : 'LOCK')}</div>
+          </div>
+        `;
+      }
+
+      // Manage Active Submission Claim Button state UI
+      const claimBtn = document.getElementById('dailyClaimBtn');
+      if (hasClaimedToday()) {
+        claimBtn.disabled = true;
+        claimBtn.innerText = "ALREADY CLAIMED TODAY";
+        claimBtn.className = "w-full bg-slate-800 text-slate-600 text-xs font-bold py-3 rounded-xl border border-slate-800 cursor-not-allowed";
+      } else {
+        claimBtn.disabled = false;
+        claimBtn.innerText = `CLAIM DAY ${todayIdx + 1} REWARD`;
+        claimBtn.className = "w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-bold py-3 rounded-xl shadow-md transition";
+      }
+    }
+
+    function getCurrentStreakDayIndex() {
+      if (!userState.lastDailyClaim) return 0;
+      const lastClaimDate = new Date(userState.lastDailyClaim);
+      const today = new Date();
+      
+      // Calculate day difference by converting to UTC dates
+      const utc1 = Date.UTC(lastClaimDate.getFullYear(), lastClaimDate.getMonth(), lastClaimDate.getDate());
+      const utc2 = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+      const diffDays = Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
+
+      if (diffDays <= 1) {
+        // Kept streak alive or same day checked
+        const index = parseInt(localStorage.getItem('streak_index_app') || '0');
+        return index % 7;
+      } else {
+        // Broken streak structure reset
+        localStorage.setItem('streak_index_app', '0');
+        return 0;
+      }
+    }
+
+    function hasClaimedToday() {
+      if (!userState.lastDailyClaim) return false;
+      const lastClaimDate = new Date(userState.lastDailyClaim).toDateString();
+      const today = new Date().toDateString();
+      return lastClaimDate === today;
+    }
+
+    function claimDailyReward() {
+      if (hasClaimedToday()) return;
+      
+      executeAdsterraPipelineSimulation('Adsterra-A', false, 10, () => {
+        const currentIdx = getCurrentStreakDayIndex();
+        const payout = STREAK_VALUES[currentIdx];
+        
+        userState.balance += payout;
+        userState.lastDailyClaim = new Date().toISOString();
+        localStorage.setItem('streak_index_app', (currentIdx + 1).toString());
+        
+        saveStateToPersistence();
+        renderDailyStreakModule();
+      });
+    }
+
+    // --- TASKS ENGINE DISPATCH ARCHITECTURE ---
+    function triggerStandardVideoTask() {
+      enforceTimeIntervalLimits();
+      if (userState.taskCount <= 0) {
+        alert("Maximum task run constraints reached.");
+        return;
+      }
+      
+      executeAdsterraPipelineSimulation('Adsterra-A', false, 10, () => {
+        userState.balance += 70;
+        userState.taskCount--;
+        saveStateToPersistence();
+        alert("Task successfully verified! Reward credited.");
+      });
+    }
+
+    function toggleAutoVideoTaskLoop() {
+      if (isAutoTaskRunning) {
+        isAutoTaskRunning = false;
+        document.getElementById('taskAutoBtn').innerText = "Start Auto";
+        document.getElementById('taskAutoBtn').className = "px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg shadow transition";
+      } else {
+        enforceTimeIntervalLimits();
+        if (userState.taskCount <= 0) {
+          alert("Maximum task run constraints reached.");
+          return;
+        }
+        isAutoTaskRunning = true;
+        document.getElementById('taskAutoBtn').innerText = "Stop Auto";
+        document.getElementById('taskAutoBtn').className = "px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow transition";
+        executeAutoTaskLoopIteration();
+      }
+    }
+
+    function executeAutoTaskLoopIteration() {
+      if (!isAutoTaskRunning) return;
+      enforceTimeIntervalLimits();
+
+      if (userState.taskCount <= 0) {
+        alert("Auto tasks completed or interval bound block met.");
+        toggleAutoVideoTaskLoop();
+        return;
+      }
+
+      // Double pack back to back 10s ads requirement (total 20 seconds loop delay)
+      executeAdsterraPipelineSimulation('Adsterra-A', true, 10, () => {
+        userState.balance += 70;
+        userState.taskCount--;
+        saveStateToPersistence();
+
+        // Recurse execution flow safely after short interval delay
+        setTimeout(() => {
+          if (isAutoTaskRunning) executeAutoTaskLoopIteration();
+        }, 800);
+      });
+    }
+
+    // --- REFERRAL LINK PLATFORM ENGINE ---
+    function copyReferralLink() {
+      const copyText = document.getElementById('refLinkInput');
+      copyText.select();
+      copyText.setSelectionRange(0, 99999);
+      
+      try {
+        navigator.clipboard.writeText(copyText.value);
+        alert("Link successfully copied to clipboard system context!");
+      } catch (err) {
+        alert("Fallback Copy Confirm Hook: " + copyText.value);
+      }
+    }
+
+    // --- FINANCIAL PROCESSING AND EXCHANGE GATEWAY ENGINE ---
+    function processWithdrawalSubmission() {
+      const address = document.getElementById('withdrawAddress').value.trim();
+      const method = document.getElementById('withdrawMethod').value;
+      
+      if (!address) {
+        alert("Please specify the destination target payout address account.");
+        return;
+      }
+      
+      if (userState.balance < 10000000) {
+        alert("Insufficient balance allocation context. Minimum threshold is 10,000,000 Coins.");
+        return;
+      }
+
+      if (userState.refCount < 7) {
+        alert(`Account security verification requires minimum 7 direct referrals. Current: ${userState.refCount}/7`);
+        return;
+      }
+
+      // Condition logic criteria activation: 10 Adsterra-A Ads processed via 5 double pairs loops (5 * 2 = 10 ads)
+      alert("Verification Process Initializing: Complete 5 consecutive Double Ad sets to authorize payout execution security clear.");
+      
+      let completedSets = 0;
+      function runWithdrawAdVerificationCycle() {
+        executeAdsterraPipelineSimulation('Adsterra-A', true, 10, () => {
+          completedSets++;
+          if (completedSets < 5) {
+            alert(`Set ${completedSets}/5 Verified. Proceeding next array set.`);
+            runWithdrawAdVerificationCycle();
+          } else {
+            // Processing execution complete balance logic adjustment
+            userState.balance -= 10000000;
+            saveStateToPersistence();
+            alert(`Withdrawal request for ${method.toUpperCase()} to address ${address} successfully dispatched to ledger queues!`);
+            document.getElementById('withdrawAddress').value = "";
+          }
+        });
+      }
+      runWithdrawAdVerificationCycle();
+    }
+
+    function processTokenExchange() {
+      if (userState.balance < 10000) {
+        alert("Minimum token swapping base limit asset requirement is 10,000 Coins.");
+        return;
+      }
+
+      // Exchange conditions execution script logic criteria: 5 sets of Adsterra-B double-back-to-back ads (20s+20s=40s per loop set)
+      alert("Exchange terminal payload initiating. Verification requirement: 5 sets of Double Adsterra-B direct ad networks.");
+      
+      let completedBUnits = 0;
+      function runExchangeAdVerificationCycle() {
+        executeAdsterraPipelineSimulation('Adsterra-B', true, 20, () => {
+          completedBUnits++;
+          if (completedBUnits < 5) {
+            alert(`Security Node Set ${completedBUnits}/5 Cleared. Initializing next block.`);
+            runExchangeAdVerificationCycle();
+          } else {
+            // Execute the points swap logic
+            const extractableCoins = Math.floor(userState.balance / 10000) * 10000;
+            const cashYield = (extractableCoins / 10000) * 5;
+            
+            userState.balance -= extractableCoins;
+            saveStateToPersistence();
+            
+            alert(`Success! Exchanged ${extractableCoins.toLocaleString()} Coins to secure an account credited gain value of +${cashYield} BDT.`);
+          }
+        });
+      }
+      runExchangeAdVerificationCycle();
+    }
+
+    // --- DIALOG MODALS POPUP INTERACTION MOCK INTERFACES ---
+    function openProfileModal() {
+      document.getElementById('profID').innerText = userState.uid;
+      document.getElementById('profUser').innerText = "@" + userState.username;
+      document.getElementById('profJoin').innerText = userState.joinDate;
+      document.getElementById('profCoins').innerText = userState.balance.toLocaleString() + " Coins";
+      document.getElementById('profileModal').classList.remove('hidden');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+    }
+
+    // --- APPLICATION RUNTIME BOOTSTRAPPER LOADING INITIALIZATION ---
+    window.addEventListener('DOMContentLoaded', () => {
+      loadStateFromPersistence();
+      drawWheel();
+      renderDailyStreakModule();
+      navigateTo('home'); // Base routing anchor initialization
+    });
+  </script>
+</body>
+</html>
