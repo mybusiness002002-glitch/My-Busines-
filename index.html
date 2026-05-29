@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Spin Reward App</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  background:#0f172a;
+  color:white;
+  font-family:Arial, sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+}
+
+.container{
+  width:100%;
+  max-width:420px;
+  text-align:center;
+  padding:20px;
+}
+
+.balance-box{
+  background:#1e293b;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:20px;
+  box-shadow:0 0 15px rgba(0,0,0,0.4);
+}
+
+.balance-box h2{
+  font-size:18px;
+  margin-bottom:8px;
+}
+
+.balance{
+  font-size:32px;
+  color:#22c55e;
+  font-weight:bold;
+}
+
+.wheel-container{
+  position:relative;
+  width:320px;
+  height:320px;
+  margin:20px auto;
+}
+
+.pointer{
+  width:0;
+  height:0;
+  border-left:18px solid transparent;
+  border-right:18px solid transparent;
+  border-top:40px solid #facc15;
+  position:absolute;
+  top:-10px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:10;
+}
+
+#wheel{
+  width:100%;
+  height:100%;
+  border-radius:50%;
+  border:10px solid white;
+  transition:transform 5s ease-out;
+}
+
+.buttons{
+  margin-top:25px;
+  display:flex;
+  gap:15px;
+  justify-content:center;
+}
+
+button{
+  padding:14px 30px;
+  border:none;
+  border-radius:12px;
+  font-size:18px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+#spinBtn{
+  background:#22c55e;
+  color:white;
+}
+
+#stopBtn{
+  background:#ef4444;
+  color:white;
+}
+
+.status{
+  margin-top:20px;
+  font-size:18px;
+  color:#cbd5e1;
+  min-height:30px;
+}
+
+.timer{
+  font-size:28px;
+  color:#facc15;
+  margin-top:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="balance-box">
+    <h2>Reward Balance</h2>
+    <div class="balance" id="balance">0.00</div>
+  </div>
+
+  <div class="wheel-container">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="320" height="320"></canvas>
+  </div>
+
+  <div class="buttons">
+    <button id="spinBtn">SPIN</button>
+    <button id="stopBtn">STOP</button>
+  </div>
+
+  <div class="status" id="status">
+    Press SPIN to start
+  </div>
+
+  <div class="timer" id="timer"></div>
+
+</div>
+
+<script>
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+
+const options = [
+  '0.01',
+  '0.1',
+  '0.2',
+  '0.3',
+  '0.4',
+  '0.5',
+  '0.6',
+  '0.7',
+  '0.8',
+  '0.9'
+];
+
+const colors = [
+  '#ef4444',
+  '#f97316',
+  '#eab308',
+  '#22c55e',
+  '#06b6d4',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#14b8a6',
+  '#84cc16'
+];
+
+const wheel = document.getElementById('wheel');
+const balanceEl = document.getElementById('balance');
+const statusEl = document.getElementById('status');
+const timerEl = document.getElementById('timer');
+
+let balance = 0;
+let autoRunning = false;
+let currentRotation = 0;
+
+function drawWheel(){
+  const arc = (2 * Math.PI) / options.length;
+
+  for(let i=0;i<options.length;i++){
+    const angle = i * arc;
+
+    ctx.beginPath();
+    ctx.moveTo(160,160);
+    ctx.arc(160,160,160,angle,angle+arc);
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(160,160);
+    ctx.rotate(angle + arc/2);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 20px Arial';
+    ctx.fillText(options[i], 90, 10);
+    ctx.restore();
+  }
+}
+
+drawWheel();
+
+function wait(ms){
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function countdown(seconds){
+  return new Promise(resolve => {
+
+    let time = seconds;
+
+    timerEl.innerText = time + 's';
+
+    const interval = setInterval(()=>{
+      time--;
+      timerEl.innerText = time + 's';
+
+      if(time <= 0){
+        clearInterval(interval);
+        timerEl.innerText = '';
+        resolve();
+      }
+    },1000);
+
+  });
+}
+
+function spinWheel(){
+
+  return new Promise(resolve => {
+
+    // Always land on 0.01
+    const selectedIndex = 0;
+
+    const degreePerItem = 360 / options.length;
+
+    const targetDegree = 360 - (selectedIndex * degreePerItem) - (degreePerItem / 2);
+
+    currentRotation += 3600 + targetDegree;
+
+    wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+    setTimeout(()=>{
+
+      const reward = parseFloat(options[selectedIndex]);
+
+      balance += reward;
+
+      balanceEl.innerText = balance.toFixed(2);
+
+      statusEl.innerText = `Won ${reward}`;
+
+      resolve();
+
+    },5000);
+
+  });
+}
+
+async function openAdAndSpin(){
+
+  if(!autoRunning) return;
+
+  statusEl.innerText = 'Opening Ad...';
+
+  // Replace with your ad/offers link
+  window.open('https://example.com', '_blank');
+
+  statusEl.innerText = 'Waiting 30 seconds...';
+
+  await countdown(30);
+
+  if(!autoRunning) return;
+
+  statusEl.innerText = 'Spinning...';
+
+  await spinWheel();
+
+  if(!autoRunning) return;
+
+  await wait(1500);
+
+  openAdAndSpin();
+}
+
+
+document.getElementById('spinBtn').addEventListener('click', ()=>{
+
+  if(autoRunning) return;
+
+  autoRunning = true;
+
+  statusEl.innerText = 'Auto Spin Started';
+
+  openAdAndSpin();
+
+});
+
+
+document.getElementById('stopBtn').addEventListener('click', ()=>{
+
+  autoRunning = false;
+
+  statusEl.innerText = 'Stopped';
+
+  timerEl.innerText = '';
+
+});
+</script>
+
+</body>
+</html>
