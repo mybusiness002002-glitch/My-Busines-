@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>EarnHub - Telegram Mini App</title>
+    <!-- Tailwind CSS for Modern UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Monetag SDK Tag Integration -->
+    <script src='//libtl.com/sdk.js' data-zone='11072165' data-sdk='show_11072165'></script>
+
+    <style>
+        /* Custom Styling for Neon/Cyberpunk Vibe & Smooth Transitions */
+        body {
+            background: linear-gradient(135deg, #0f0c1b 0%, #1a103c 50%, #0d0626 100%);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        .neon-border {
+            box-shadow: 0 0 10px rgba(124, 58, 237, 0.3), inset 0 0 10px rgba(124, 58, 237, 0.2);
+        }
+        .neon-text {
+            text-shadow: 0 0 8px rgba(167, 139, 250, 0.6);
+        }
+        .glass-panel {
+            background: rgba(21, 18, 43, 0.65);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(124, 58, 237, 0.2);
+        }
+        /* Scrollbar customization */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 12, 27, 0.9);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #7c3aed;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="text-gray-100 select-none min-h-screen pb-24 overflow-x-hidden">
+
+    <!-- Top Navigation Bar (Common across pages) -->
+    <header class="glass-panel sticky top-0 z-40 px-4 py-3 flex items-center justify-between border-b border-purple-900/30 shadow-lg">
+        <div class="flex items-center space-x-2.5 cursor-pointer" onclick="openProfilePopup()">
+            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center border border-purple-400/40">
+                <i class="fa-solid fa-user text-white text-sm"></i>
+            </div>
+            <div>
+                <div id="user-name" class="text-xs font-semibold text-purple-200">User</div>
+                <div class="text-[10px] text-gray-400">ID: <span id="user-id-display">Loading...</span></div>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+            <div class="bg-purple-950/50 px-3 py-1.5 rounded-full border border-purple-500/20 flex items-center space-x-2">
+                <i class="fa-solid fa-coins text-yellow-400 text-sm animate-pulse"></i>
+                <span id="global-balance" class="font-bold text-sm text-yellow-300 neon-text">0</span>
+            </div>
+            <button onclick="switchTab('wallet')" class="text-purple-300 hover:text-white transition">
+                <i class="fa-solid fa-wallet text-xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Page Content Container -->
+    <main class="max-w-md mx-auto px-4 pt-4 pb-6">
+        
+        <!-- ================= HOME PAGE ================= -->
+        <section id="page-home" class="page-section space-y-6">
+            <!-- Adsterra Banner 1 PlaceHolder -->
+            <div class="flex justify-center my-2">
+                <div id="home-banner-1" class="w-full overflow-hidden flex justify-center bg-black/20 rounded-md"></div>
+            </div>
+
+            <!-- Manual Spin Wheel -->
+            <div class="glass-panel p-5 rounded-2xl relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-24 h-24 bg-purple-600/10 rounded-full blur-xl"></div>
+                <h2 class="text-center font-bold text-lg text-purple-200 mb-4 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-circle-notch text-purple-400"></i> লাকি স্পিন হুইল
+                </h2>
+                
+                <div class="flex flex-col items-center justify-center">
+                    <!-- Wheel Canvas Container -->
+                    <div class="relative w-64 h-64 mb-4 flex items-center justify-center">
+                        <canvas id="wheelCanvas" width="256" height="256" class="w-full h-full rounded-full transition-transform duration-75"></canvas>
+                        <!-- Center pin/arrow pointer -->
+                        <div class="absolute top-0 left-1/2 -translate-x-1/2 -mt-1 z-10 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[20px] border-t-yellow-400"></div>
+                        <!-- Center Hub button shadow -->
+                        <div class="absolute w-10 h-10 rounded-full bg-slate-950 border-4 border-yellow-400 flex items-center justify-center shadow-lg shadow-purple-500/50">
+                            <div class="w-3 h-3 bg-purple-500 rounded-full"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="spin-status" class="text-sm text-gray-300 mb-3 text-center min-h-[20px]">১ম স্পিন একদম ফ্রি!</div>
+                    <button id="btn-spin-manual" onclick="spinManual()" class="w-full max-w-xs bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 py-3 px-6 rounded-xl font-bold text-white shadow-lg transition duration-200 active:scale-95 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate"></i> SPIN
+                    </button>
+                    <button id="btn-claim-manual" onclick="claimManualReward()" class="hidden w-full max-w-xs bg-gradient-to-r from-green-600 to-emerald-600 py-3 px-6 rounded-xl font-bold text-white shadow-lg transition duration-200 active:scale-95 flex items-center justify-center gap-2 animate-bounce">
+                        <i class="fa-solid fa-gift"></i> CLAIM REWARD
+                    </button>
+                </div>
+            </div>
+
+            <!-- Auto Spin Section -->
+            <div class="glass-panel p-5 rounded-2xl relative overflow-hidden">
+                <div class="absolute -bottom-10 -left-10 w-24 h-24 bg-indigo-600/10 rounded-full blur-xl"></div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-bold text-md text-indigo-300 flex items-center gap-2">
+                        <i class="fa-solid fa-robot"></i> অটো স্পিন লাকি হুইল
+                    </h2>
+                    <span class="text-xs bg-purple-950/80 border border-purple-500/30 px-2 py-0.5 rounded text-purple-200" id="auto-spin-limit-text">0/100 Spins</span>
+                </div>
+                <p class="text-xs text-gray-400 mb-4 leading-relaxed">প্রতি স্পিনে ২টি Monetag বিজ্ঞাপন লোড হবে, স্বয়ংক্রিয়ভাবে স্পিন হবে এবং কয়েন সরাসরি যুক্ত হবে। ২৮ ঘণ্টায় ১০০টি লিমিট।</p>
+                
+                <div class="flex items-center space-x-3">
+                    <button id="btn-auto-spin-start" onclick="startAutoSpin()" class="flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 py-3 rounded-xl font-bold text-white transition active:scale-95 flex items-center justify-center gap-1.5 text-sm">
+                        <i class="fa-solid fa-play"></i> START AUTO
+                    </button>
+                    <button id="btn-auto-spin-stop" onclick="stopAutoSpin()" disabled class="flex-1 bg-gray-800 opacity-50 py-3 rounded-xl font-bold text-red-400 transition flex items-center justify-center gap-1.5 text-sm">
+                        <i class="fa-solid fa-stop"></i> STOP AUTO
+                    </button>
+                </div>
+            </div>
+
+            <!-- Adsterra Banner 2 PlaceHolder -->
+            <div class="flex justify-center my-2">
+                <div id="home-banner-2" class="w-full overflow-hidden flex justify-center bg-black/20 rounded-md"></div>
+            </div>
+
+            <!-- Daily Reward Section -->
+            <div class="glass-panel p-5 rounded-2xl">
+                <h2 class="font-bold text-md text-purple-200 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-day text-purple-400"></i> ডেইলি রিওয়ার্ড (UTC 00:00 রিসেট)
+                </h2>
+                <!-- 7-Day Grid -->
+                <div class="grid grid-cols-4 gap-2 mb-4 text-center">
+                    <div id="day-cell-1" class="bg-slate-900/40 border border-purple-900/30 p-2 rounded-xl">
+                        <div class="text-[10px] text-gray-400">Day 1</div>
+                        <div class="text-xs font-bold text-yellow-300 mt-1">+10</div>
+                    </div>
+                    <div id="day-cell-2" class="bg-slate-900/40 border border-purple-900/30 p-2 rounded-xl">
+                        <div class="text-[10px] text-gray-400">Day 2</div>
+                        <div class="text-xs font-bold text-yellow-300 mt-1">+20</div>
+                    </div>
+                    <div id="day-cell-3" class="bg-slate-900/40 border border-purple-900/30 p-2 rounded-xl">
+                        <div class="text-[10px] text-gray-400">Day 3</div>
+                        <div class="text-xs font-bold text-yellow-300 mt-1">+30</div>
+                    </div>
+                    <div id="day-cell-4" class="bg-slate-900/40 border border-purple-900/30 p-2 rounded-xl">
+                        <div class="text-[10px] text-gray-400">Day 4</div>
+                        <div class="text-xs font-bold text-yellow-300 mt-1">+50</div>
+                    </div>
+                    <div id="day-cell-5" class="bg-slate-900/40 border border-purple-900/30 p-2 rounded-xl">
+                        <div class="text-[10px] text-gray-400">Day 5</div>
+                        <div class="text-xs font-bold text-yellow-300 mt-1">+70</div>
+                    </div>
+                    <div id="day-cell-6" class="bg-slate-900/40 border border-purple-900/30 p-2 rounded-xl">
+                        <div class="text-[10px] text-gray-400">Day 6</div>
+                        <div class="text-xs font-bold text-yellow-300 mt-1">+90</div>
+                    </div>
+                    <div id="day-cell-7" class="bg-slate-900/40 border border-purple-900/30 p-2 rounded-xl col-span-2 flex items-center justify-between px-3">
+                        <div class="text-[10px] text-gray-400">Day 7 Bonus</div>
+                        <div class="text-xs font-bold text-yellow-300">+100</div>
+                    </div>
+                </div>
+                <button id="btn-claim-daily" onclick="claimDailyReward()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 py-3 rounded-xl font-bold text-sm text-white transition active:scale-95 flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-calendar-check"></i> CLAIM DAILY REWARD
+                </button>
+            </div>
+
+            <!-- Adsterra Banner 3 PlaceHolder -->
+            <div class="flex justify-center my-2">
+                <div id="home-banner-3" class="w-full overflow-hidden flex justify-center bg-black/20 rounded-md"></div>
+            </div>
+        </section>
+
+        <!-- ================= TASKS PAGE ================= -->
+        <section id="page-tasks" class="page-section hidden space-y-6">
+            <!-- Adsterra Banner 1 PlaceHolder -->
+            <div class="flex justify-center my-2">
+                <div id="tasks-banner-1" class="w-full overflow-hidden flex justify-center bg-black/20 rounded-md"></div>
+            </div>
+
+            <!-- Task Counter -->
+            <div class="glass-panel p-5 rounded-2xl">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-semibold text-purple-200">২৮ ঘণ্টার টাস্ক লিমিট</span>
+                    <span id="tasks-limit-text" class="text-xs font-bold text-purple-400">0 / 500 Completed</span>
+                </div>
+                <div class="w-full bg-slate-900/60 rounded-full h-2">
+                    <div id="tasks-progress-bar" class="bg-purple-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Task List Cards -->
+            <div class="space-y-4">
+                <!-- Task 1: Normal Watch -->
+                <div class="glass-panel p-4 rounded-xl flex items-center justify-between border-l-4 border-l-purple-500">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-lg bg-purple-950/60 border border-purple-500/20 flex items-center justify-center text-purple-300">
+                            <i class="fa-solid fa-circle-play text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-gray-200">Watch Video / Ad</h3>
+                            <p class="text-[11px] text-gray-400 mt-0.5">অ্যাড সম্পন্ন করুন ও কয়েন ক্লেইম করুন</p>
+                            <span class="text-xs font-semibold text-yellow-400 mt-1 inline-block"><i class="fa-solid fa-coins mr-0.5"></i> +70 Coins</span>
+                        </div>
+                    </div>
+                    <button onclick="startSingleTask()" class="bg-purple-600 hover:bg-purple-500 text-xs px-4 py-2.5 rounded-lg font-bold text-white transition active:scale-95">
+                        Start / Go
+                    </button>
+                </div>
+
+                <!-- Adsterra Banner 2 PlaceHolder in Tasks -->
+                <div class="flex justify-center my-1">
+                    <div id="tasks-banner-2" class="w-full overflow-hidden flex justify-center bg-black/20 rounded-md"></div>
+                </div>
+
+                <!-- Task 2: Auto Watch -->
+                <div class="glass-panel p-4 rounded-xl flex items-center justify-between border-l-4 border-l-indigo-500">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-lg bg-indigo-950/60 border border-indigo-500/20 flex items-center justify-center text-indigo-300">
+                            <i class="fa-solid fa-play animate-pulse text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-gray-200">Auto Watch Video</h3>
+                            <p class="text-[11px] text-gray-400 mt-0.5">ব্যাক-টু-ব্যাক ২টি অ্যাড প্লে হবে</p>
+                            <span class="text-xs font-semibold text-yellow-400 mt-1 inline-block"><i class="fa-solid fa-coins mr-0.5"></i> +70 Coins</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col space-y-1">
+                        <button id="btn-auto-task-start" onclick="startAutoTask()" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-4 py-2.5 rounded-lg font-bold text-white transition active:scale-95 text-center">
+                            Start Auto
+                        </button>
+                        <button id="btn-auto-task-stop" onclick="stopAutoTask()" class="hidden bg-red-800 text-xs px-4 py-1.5 rounded-lg font-bold text-red-200 transition text-center">
+                            Stop
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Adsterra Banner 3 PlaceHolder -->
+            <div class="flex justify-center my-2">
+                <div id="tasks-banner-3" class="w-full overflow-hidden flex justify-center bg-black/20 rounded-md"></div>
+            </div>
+        </section>
+
+        <!-- ================= REFERRAL PAGE ================= -->
+        <section id="page-referral" class="page-section hidden space-y-6">
+            <!-- Adsterra Banner 1 PlaceHolder -->
+            <div class="flex justify-center my-2">
+                <div id="ref-banner-1" class="w-full overflow-hidden flex justify-center bg-black/20 rounded-md"></div>
+            </div>
+
+            <!-- Referral Link Generator -->
+            <div class="glass-panel p-5 rounded-2xl relative overflow-hidden">
+                <h2 class="font-bold text-md text-purple-200 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-purple-400"></i> আপনার রেফারেল লিংক
+                </h2>
+                <p class="text-xs text-gray-400 mb-4 leading-relaxed">প্রতি সফল রেফারের জন্য আপনি পাবেন <span class="text-yellow-400 font-bold">৪০০ কয়েন</span>। আমন্ত্রিত ইউজার তার প্রথম টাস্ক বা স্পিন কমপ্লিট করার সাথে সাথে এটি আপনার ব্যালেন্সে যোগ হবে।</p>
+                
+                <div class="flex space-x-2">
+                    <input type="text" id="ref-link-input" readonly value="Loading..." class="flex-1 bg-slate-900/80 border border-purple-500/20 px-3 py-2.5 text-xs text-gray-300 rounded-xl outline-none focus:border-purple-500 transition">
+                    <button onclick="copyReferralLink()" class="bg-purple-600 hover:bg-purple-500 px-4 py-2.5 text-xs rounded-xl font-bold text-white transition active:scale-95 flex items-center gap-1">
+                        <i class="fa-solid fa-copy"></i> Copy
+                    </button>
+                </div>
+            </div>
+
+            <!-- Adsterra Banner 2 PlaceHolder in Referral -->
+            <div class="flex justify-center my-1">
+                <div id="ref-banner-2" class="w-full overflow-hidden flex justify-center bg-black/20 rounded-md"></div>
+            </div>
+
+            <!-- Referral Code Redemption Box -->
+            <div id="ref-code-box" class="glass-panel p-5 rounded-2xl border-dashed border border-purple-500/40">
+                <h3 class="font-semibold text-xs text-purple-300 mb-2">রেফার কোড ব্যবহার করুন</h3>
+                <div class="flex space-x-2">
+                    <input type="text" id="ref-code-input" placeholder="ইনভাইট কোড লিখুন" class="flex-1 bg-slate-900/60 border border-purple-900/40 px-3 py-2 text-xs text-gray-300 rounded-lg outline-none focus:border-purple-500 transition">
+                    <button onclick="redeemReferralCode()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs rounded-lg font-bold text-white transition active:scale-95">
+                        ক্লেইম ৪০০ কয়েন
+                    </button>
+                </div>
+            </div>
+
+            <!-- Referral Dashboard -->
+            <div class="glass-panel p-5 rounded-2xl">
+                <h2 class="font-bold text-md text-purple-200 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-purple-400"></i> রেফারেল ড্যাশবোর্ড
+                </h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-purple-900/20 text-center">
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wide">আমন্ত্রিত ইউজার</div>
+                        <div id="dashboard-referred" class="text-xl font-extrabold text-purple-200 mt-1 neon-text">0</div>
+                    </div>
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-purple-900/20 text-center">
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wide">রেফারেল থেকে আয়</div>
+                        <div class="text-xl font-extrabold text-yellow-300 mt-1 flex items-center justify-center gap-1 neon-text">
+                            <i class="fa-solid fa-coins text-xs"></i> <span id="dashboard-earnings">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Adsterra Banner 3 PlaceHolder -->
+            <div class="flex justify-center my-2">
+                <div id="ref-banner-3" class="w-full overflow-hidden flex justify-center bg-black/20 rounded-md"></div>
+            </div>
+        </section>
+
+        <!-- ================= WALLET PAGE ================= -->
+        <section id="page-wallet" class="page-section hidden space-y-6">
+            <!-- Adsterra Banner 1 PlaceHolder -->
+            <div class="flex justify-center my-2">
+                <div id="wallet-banner-1" class="w-full overflow-hidden flex justify-center bg-black/20 rounded-md"></div>
+            </div>
+
+            <!-- Large Balance Display -->
+            <div class="glass-panel p-6 rounded-3xl relative overflow-hidden text-center border-t-4 border-t-purple-500">
+                <div class="absolute -top-12 -left-12 w-32 h-32 bg-purple-600/10 rounded-full blur-2xl"></div>
+                <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-indigo-600/10 rounded-full blur-2xl"></div>
+                
+                <span class="text-xs uppercase text-gray-400 tracking-wider">বর্তমান ব্যালেন্স</span>
+                <div class="text-3xl font-black text-yellow-400 mt-1.5 flex items-center justify-center gap-2 neon-text">
+                    <i class="fa-solid fa-coins text-2xl animate-spin" style="animation-duration: 4s;"></i>
+                    <span id="wallet-balance-display">0</span> <span class="text-xs text-purple-300">Coins</span>
+                </div>
+                <div class="text-[11px] text-purple-200/60 mt-1" id="converted-bdt-display">≒ ০.০০ BDT</div>
+            </div>
+
+            <!-- Withdraw Box -->
+            <div class="glass-panel p-5 rounded-2xl">
+                <h2 class="font-bold text-md text-purple-200 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-money-bill-transfer text-purple-400"></i> উইথড্র অপশন (নূন্যতম ১ কোটি কয়েন)
+                </h2>
+                
+                <div class="space-y-3.5">
+                    <div>
+                        <label class="block text-[11px] text-gray-400 mb-1">পেমেন্ট মেথড সিলেক্ট করুন</label>
+                        <select id="withdraw-method" onchange="updateWithdrawPlaceholder()" class="w-full bg-slate-900/80 border border-purple-500/20 px-3 py-2.5 text-xs text-gray-200 rounded-lg outline-none focus:border-purple-500 transition">
+                            <option value="bkash">বিকাশ (Personal)</option>
+                            <option value="nagad">নগদ (Personal)</option>
+                            <option value="usdt">USDT (TRC-20)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-gray-400 mb-1" id="withdraw-input-label">বিকাশ মোবাইল নম্বর</label>
+                        <input type="text" id="withdraw-account-input" placeholder="017XXXXXXXX" class="w-full bg-slate-900/80 border border-purple-500/20 px-3 py-2.5 text-xs text-gray-200 rounded-lg outline-none focus:border-purple-500 transition">
+                    </div>
+                    
+                    <div class="bg-purple-950/20 border border-purple-500/10 p-3 rounded-lg space-y-1.5">
+                        <div class="text-[11px] text-gray-400 flex justify-between">
+                            <span>উইথড্রর শর্তাবলী:</span>
+                            <span class="text-purple-300 font-semibold">৭ জন রেফারেল ও ১০টি অ্যাড টাস্ক</span>
+                        </div>
+                        <div class="text-[10px] text-purple-300 leading-relaxed">
+                            * উইথড্র সাবমিট করার আগে ১০টি অ্যাড টাস্ক কমপ্লিট করতে হবে (প্রতিটি টাস্কে ২ টি Monetag অ্যাড অটোমেটিক প্লে হবে)।
+                        </div>
+                    </div>
+
+                    <button onclick="attemptWithdraw()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 py-3 rounded-xl font-bold text-xs text-white transition active:scale-95 flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-paper-plane"></i> SUBMIT WITHDRAW
+                    </button>
+                </div>
+            </div>
+
+            <!-- Adsterra Banner 2 PlaceHolder in Wallet -->
+            <div class="flex justify-center my-1">
+                <div id="wallet-banner-2" class="w-full overflow-hidden flex justify-center bg-black/20 rounded-md"></div>
+            </div>
+
+            <!-- Coin Exchange Section -->
+            <div class="glass-panel p-5 rounded-2xl border border-indigo-500/25 bg-gradient-to-tr from-indigo-950/20 to-purple-950/10">
+                <h2 class="font-bold text-md text-indigo-300 mb-1 flex items-center gap-2">
+                    <i class="fa-solid fa-arrows-rotate"></i> কয়েন এক্সচেঞ্জ এক্সচেঞ্জ করুন
+                </h2>
+                <p class="text-[11px] text-gray-400 mb-3">কনভার্সন রেট: ১০,০০০ কয়েন = ৫ BDT (নূন্যতম ১০,০০০ কয়েন এবং ৫টি অ্যাড টাস্ক প্রদেয়)</p>
+                
+                <div class="space-y-3">
+                    <div>
+                        <input type="number" id="exchange-coins-input" step="10000" min="10000" placeholder="কত কয়েন এক্সচেঞ্জ করবেন? (যেমন: ১০০০০)" class="w-full bg-slate-900/80 border border-indigo-500/20 px-3 py-2.5 text-xs text-gray-200 rounded-lg outline-none focus:border-indigo-500 transition">
+                    </div>
+                    <button onclick="attemptExchange()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-2.5 rounded-xl font-bold text-xs text-white transition active:scale-95 flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-coins"></i> EXCHANGE TO BDT
+                    </button>
+                </div>
+            </div>
+
+            <!-- Adsterra Banner 3 PlaceHolder (Serving as Banner 4 requested) -->
+            <div class="flex justify-center my-2">
+                <div id="wallet-banner-3" class="w-full overflow-hidden flex justify-center bg-black/20 rounded-md"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Fixed Bottom Navigation Bar -->
+    <nav class="glass-panel fixed bottom-0 left-0 right-0 z-40 border-t border-purple-900/40 shadow-2xl">
+        <div class="max-w-md mx-auto flex items-center justify-around py-3 px-2">
+            <!-- Home -->
+            <button onclick="switchTab('home')" id="tab-home" class="flex flex-col items-center space-y-1 text-purple-400 transition hover:text-white">
+                <i class="fa-solid fa-house text-lg"></i>
+                <span class="text-[10px] font-medium">Home</span>
+            </button>
+            <!-- Tasks -->
+            <button onclick="switchTab('tasks')" id="tab-tasks" class="flex flex-col items-center space-y-1 text-gray-400 transition hover:text-white">
+                <i class="fa-solid fa-list-check text-lg"></i>
+                <span class="text-[10px] font-medium">Tasks</span>
+            </button>
+            <!-- Referral -->
+            <button onclick="switchTab('referral')" id="tab-referral" class="flex flex-col items-center space-y-1 text-gray-400 transition hover:text-white">
+                <i class="fa-solid fa-users text-lg"></i>
+                <span class="text-[10px] font-medium">Referral</span>
+            </button>
+            <!-- Wallet -->
+            <button onclick="switchTab('wallet')" id="tab-wallet" class="flex flex-col items-center space-y-1 text-gray-400 transition hover:text-white">
+                <i class="fa-solid fa-wallet text-lg"></i>
+                <span class="text-[10px] font-medium">Wallet</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Custom Dialog Modal (For Profile & Stats Popup) -->
+    <div id="profile-popup" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center px-4">
+        <div class="glass-panel w-full max-w-xs p-6 rounded-2xl relative border border-purple-500/30 text-center animate-fade-in">
+            <button onclick="closeProfilePopup()" class="absolute top-3.5 right-3.5 text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="w-14 h-14 bg-gradient-to-tr from-purple-600 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3 border-2 border-purple-400">
+                <i class="fa-solid fa-user text-white text-xl"></i>
+            </div>
+            <h3 id="popup-profile-name" class="font-extrabold text-purple-200">User Profile</h3>
+            <p id="popup-profile-id" class="text-xs text-gray-400 mt-0.5">ID: Loading...</p>
+            
+            <div class="mt-4 border-t border-purple-900/30 pt-4 space-y-3.5 text-left text-xs text-gray-300">
+                <div class="flex justify-between">
+                    <span>জয়েনিং ডেট:</span>
+                    <span id="popup-join-date" class="text-purple-300">Loading...</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>মোট অর্জিত কয়েন:</span>
+                    <span id="popup-total-earned" class="text-yellow-400 font-bold">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simulated Monetag Ad Dialog Popup (Fallback if real Monetag blocked) -->
+    <div id="ad-popup" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center px-4">
+        <div class="glass-panel w-full max-w-xs p-6 rounded-2xl border border-purple-500/40 text-center">
+            <div class="w-12 h-12 bg-purple-950/60 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/20 text-purple-300">
+                <i class="fa-solid fa-circle-play text-xl animate-pulse"></i>
+            </div>
+            <h3 class="font-bold text-md text-white mb-1">Sponsored Ad is Playing</h3>
+            <p class="text-xs text-gray-400 mb-4">অনুগ্রহ করে কয়েক সেকেন্ড অপেক্ষা করুন...</p>
+            
+            <!-- Dynamic Countdown Timer Circular Display -->
+            <div class="relative w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <svg class="w-full h-full transform -rotate-90">
+                    <circle cx="32" cy="32" r="28" stroke="rgba(124, 58, 237, 0.1)" stroke-width="4" fill="transparent"/>
+                    <circle id="timer-bar" cx="32" cy="32" r="28" stroke="#7c3aed" stroke-width="4" fill="transparent" stroke-dasharray="175" stroke-dashoffset="175" class="transition-all duration-1000"/>
+                </svg>
+                <span id="timer-text" class="absolute font-bold text-sm text-purple-300">5s</span>
+            </div>
+            
+            <button id="btn-ad-close" onclick="closeAdModal(true)" disabled class="w-full bg-gray-800 text-gray-500 py-2.5 rounded-xl font-bold text-xs cursor-not-allowed transition">
+                Close (Please wait)
+            </button>
+        </div>
+    </div>
+
+    <!-- Ad Task Progress Modal for Withdrawal/Exchange Requirements -->
+    <div id="ad-task-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center px-4">
+        <div class="glass-panel w-full max-w-xs p-6 rounded-2xl border border-indigo-500/40 text-center">
+            <div class="w-12 h-12 bg-indigo-950/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-indigo-500/20 text-indigo-300">
+                <i class="fa-solid fa-shield-halved text-xl"></i>
+            </div>
+            <h3 class="font-bold text-sm text-white mb-1" id="ad-task-title">রিকোয়ার্ড অ্যাড টাস্ক</h3>
+            <p class="text-xs text-gray-400 mb-4 leading-relaxed" id="ad-task-desc">শর্ত অনুযায়ী আপনাকে টাস্কটি সম্পন্ন করতে বিজ্ঞাপন দেখতে হবে।</p>
+            
+            <div class="bg-slate-900/60 p-4 rounded-xl border border-indigo-900/20 mb-4">
+                <div class="text-[11px] text-gray-400">টাস্ক প্রগ্রেস</div>
+                <div class="text-2xl font-black text-indigo-300 mt-1" id="ad-task-progress">0 / 10</div>
+            </div>
+            
+            <button id="btn-play-ad-task" onclick="playNextAdTask()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 py-3 rounded-xl font-bold text-xs text-white transition active:scale-95 flex items-center justify-center gap-1">
+                <i class="fa-solid fa-circle-play"></i> Watch Next Ad (2 Ads)
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        // --- ADSTERRA IFRAME ISOLATION FUNCTIONS ---
+        // dynamically injects Adsterra Native banners into clean iframe sandbox environments without using document.write in main window
+        function loadAdsterraBanner(containerId, key, width, height) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const iframe = document.createElement('iframe');
+            iframe.width = width;
+            iframe.height = height;
+            iframe.style.border = 'none';
+            iframe.style.overflow = 'hidden';
+            iframe.style.margin = '0 auto';
+            iframe.style.display = 'block';
+            
+            container.appendChild(iframe);
+            
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: transparent; }</style>
+                </head>
+                <body>
+                    <script type="text/javascript">
+                        atOptions = {
+                            'key' : '${key}',
+                            'format' : 'iframe',
+                            'height' : ${height},
+                            'width' : ${width},
+                            'params' : {}
+                        };
+                    <\/script>
+                    <script type="text/javascript" src="https://freshmanhow.com/${key}/invoke.js"><\/script>
+                </body>
+                </html>
+            `);
+            iframeDoc.close();
+        }
+
+        // --- APP STATE ---
+        const DEFAULT_STATE = {
+            balance: 0,
+            totalEarned: 0,
+            hasUsedReferralCode: false,
+            referredCount: 0,
+            referralEarnings: 0,
+            lastDailyClaimDate: null,
+            autoSpinsCount: 0,
+            autoSpinsStartTime: null,
+            tasksCount: 0,
+            tasksStartTime: null,
+            joinDate: new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })
+        };
+
+        let state = { ...DEFAULT_STATE };
+
+        // LocalStorage loading
+        function loadState() {
+            const saved = localStorage.getItem('earnhub_user_state');
+            if (saved) {
+                try {
+                    state = { ...DEFAULT_STATE, ...JSON.parse(saved) };
+                } catch (e) {
+                    state = { ...DEFAULT_STATE };
+                }
+            }
+            updateGlobalUI();
+        }
+
+        function saveState() {
+            localStorage.setItem('earnhub_user_state', JSON.stringify(state));
+            updateGlobalUI();
+        }
+
+        // Telegram SDK integration
+        let tg = window.Telegram?.WebApp;
+        let userId = "654981320"; // Browser testing fallback ID
+        let userName = "Earning Fan"; // Browser testing fallback Name
+
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                userId = tg.initDataUnsafe.user.id.toString();
+                userName = tg.initDataUnsafe.user.first_name + (tg.initDataUnsafe.user.last_name ? " " + tg.initDataUnsafe.user.last_name : "");
+            }
+        }
+
+        // --- GLOBAL UI REFRESH ---
+        function updateGlobalUI() {
+            document.getElementById('user-name').textContent = userName;
+            document.getElementById('user-id-display').textContent = userId;
+            document.getElementById('global-balance').textContent = state.balance.toLocaleString();
+            document.getElementById('wallet-balance-display').textContent = state.balance.toLocaleString();
+            
+            // Simulating Conversion Rate: 10,000 Coins = 5 BDT
+            const convertedBDT = (state.balance / 10000) * 5;
+            document.getElementById('converted-bdt-display').textContent = `≒ ${convertedBDT.toFixed(2)} BDT`;
+            
+            // Referral dashboard
+            document.getElementById('dashboard-referred').textContent = state.referredCount;
+            document.getElementById('dashboard-earnings').textContent = state.referralEarnings;
+            
+            if (state.hasUsedReferralCode) {
+                const box = document.getElementById('ref-code-box');
+                if (box) box.classList.add('hidden');
+            }
+
+            // Generate unique Telegram referral link or browser fallback
+            const refLink = tg ? `https://t.me/your_bot/app?startapp=${userId}` : `https://example.com/app?startapp=${userId}`;
+            document.getElementById('ref-link-input').value = refLink;
+
+            // Reset limits dynamically on screen
+            checkLimitsReset();
+        }
+
+        // Checks and resets 28 hours limits for spin and tasks
+        function checkLimitsReset() {
+            const now = Date.now();
+            const limitPeriod = 28 * 60 * 60 * 1000; // 28 hours
+
+            // Auto spins reset
+            if (state.autoSpinsStartTime) {
+                const diff = now - state.autoSpinsStartTime;
+                if (diff >= limitPeriod) {
+                    state.autoSpinsCount = 0;
+                    state.autoSpinsStartTime = null;
+                }
+            }
+            document.getElementById('auto-spin-limit-text').textContent = `${state.autoSpinsCount}/100 Spins`;
+
+            // Tasks limit reset
+            if (state.tasksStartTime) {
+                const diff = now - state.tasksStartTime;
+                if (diff >= limitPeriod) {
+                    state.tasksCount = 0;
+                    state.tasksStartTime = null;
+                }
+            }
+            document.getElementById('tasks-limit-text').textContent = `${state.tasksCount} / 500 Completed`;
+            const progressPercent = Math.min((state.tasksCount / 500) * 100, 100);
+            document.getElementById('tasks-progress-bar').style.width = `${progressPercent}%`;
+        }
+
+        // --- ROUTING / TAB SYSTEM ---
+        let currentTab = 'home';
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.page-section').forEach(section => section.classList.add('hidden'));
+            document.getElementById(`page-${tabId}`).classList.remove('hidden');
+
+            // Navigation active style manipulation
+            const tabs = ['home', 'tasks', 'referral', 'wallet'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (t === tabId) {
+                    btn.classList.add('text-purple-400');
+                    btn.classList.remove('text-gray-400');
+                } else {
+                    btn.classList.add('text-gray-400');
+                    btn.classList.remove('text-purple-400');
+                }
+            });
+
+            // Trigger dynamic Adsterra banner loading on active pages
+            loadPageAdsterraBanners(tabId);
+        }
+
+        // Triggers dynamic sandbox script loading corresponding to layout structures of active tabs
+        function loadPageAdsterraBanners(tabId) {
+            // Keys provided by user
+            const keyBanner1 = '6d4548399c7d8427045521b68a6452bd'; // 468x60
+            const keyBanner2 = '49ff65b4d05691cf1c55536915399d49'; // 728x90
+            const keyBanner3 = 'b8efd521c8d39185d1f399d99cf8ebfb'; // 300x250
+
+            if (tabId === 'home') {
+                loadAdsterraBanner('home-banner-1', keyBanner1, 468, 60);
+                loadAdsterraBanner('home-banner-2', keyBanner2, 728, 90);
+                loadAdsterraBanner('home-banner-3', keyBanner3, 300, 250);
+            } else if (tabId === 'tasks') {
+                loadAdsterraBanner('tasks-banner-1', keyBanner1, 468, 60);
+                loadAdsterraBanner('tasks-banner-2', keyBanner2, 728, 90);
+                loadAdsterraBanner('tasks-banner-3', keyBanner3, 300, 250);
+            } else if (tabId === 'referral') {
+                loadAdsterraBanner('ref-banner-1', keyBanner1, 468, 60);
+                loadAdsterraBanner('ref-banner-2', keyBanner2, 728, 90);
+                loadAdsterraBanner('ref-banner-3', keyBanner3, 300, 250);
+            } else if (tabId === 'wallet') {
+                loadAdsterraBanner('wallet-banner-1', keyBanner1, 468, 60);
+                loadAdsterraBanner('wallet-banner-2', keyBanner2, 728, 90);
+                loadAdsterraBanner('wallet-banner-3', keyBanner3, 300, 250);
+            }
+        }
+
+        // --- MONETAG / SIMULATED AD EXECUTION WRAPPER ---
+        // Executes real SDK zone trigger or falls back to simulated beautiful modal on blocker/fallback/environment limit
+        function triggerAd() {
+            return new Promise((resolve) => {
+                const zoneId = '11072165';
+                const showFunction = `show_${zoneId}`;
+                
+                if (typeof window[showFunction] === 'function') {
+                    window[showFunction]({ ymid: userId })
+                        .then(() => {
+                            resolve(true);
+                        })
+                        .catch((err) => {
+                            console.warn("Monetag SDK blocked or rejected, opening simulated fallback modal.", err);
+                            triggerSimulatedAdModal(resolve);
+                        });
+                } else {
+                    triggerSimulatedAdModal(resolve);
+                }
+            });
+        }
+
+        // Chained execution wrapper for Auto Spin or Auto watch tasks
+        async function triggerBackToBackAds(count = 2) {
+            for (let i = 0; i < count; i++) {
+                await triggerAd();
+            }
+        }
+
+        // SIMULATED MODAL ACTIONS
+        let adResolveCallback = null;
+        function triggerSimulatedAdModal(resolveFn) {
+            adResolveCallback = resolveFn;
+            document.getElementById('ad-popup').classList.remove('hidden');
+            
+            const closeBtn = document.getElementById('btn-ad-close');
+            closeBtn.disabled = true;
+            closeBtn.classList.add('bg-gray-800', 'text-gray-500');
+            closeBtn.classList.remove('bg-purple-600', 'text-white');
+            closeBtn.textContent = "Close (Please wait)";
+            
+            let count = 5;
+            const timerText = document.getElementById('timer-text');
+            const timerBar = document.getElementById('timer-bar');
+            
+            timerText.textContent = `${count}s`;
+            // Calculate SVG dashoffset countdown logic
+            const dashMax = 175;
+            timerBar.style.strokeDashoffset = 0;
+
+            const interval = setInterval(() => {
+                count--;
+                timerText.textContent = `${count}s`;
+                const progress = dashMax - ((count / 5) * dashMax);
+                timerBar.style.strokeDashoffset = progress;
+
+                if (count <= 0) {
+                    clearInterval(interval);
+                    closeBtn.disabled = false;
+                    closeBtn.classList.remove('bg-gray-800', 'text-gray-500', 'cursor-not-allowed');
+                    closeBtn.classList.add('bg-purple-600', 'text-white');
+                    closeBtn.textContent = "Claim / Close";
+                }
+            }, 1000);
+        }
+
+        function closeAdModal(successfullyCompleted) {
+            document.getElementById('ad-popup').classList.add('hidden');
+            if (adResolveCallback) {
+                adResolveCallback(successfullyCompleted);
+                adResolveCallback = null;
+            }
+        }
+
+        // --- PROFILE OVERLAY ---
+        function openProfilePopup() {
+            document.getElementById('popup-profile-name').textContent = userName;
+            document.getElementById('popup-profile-id').textContent = `ID: ${userId}`;
+            document.getElementById('popup-join-date').textContent = state.joinDate;
+            document.getElementById('popup-total-earned').textContent = state.totalEarned.toLocaleString();
+            document.getElementById('profile-popup').classList.remove('hidden');
+        }
+
+        function closeProfilePopup() {
+            document.getElementById('profile-popup').classList.add('hidden');
+        }
+
+        // --- DRAW SPIN WHEEL (CANVAS INTERACTION) ---
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const prizes = ['50 Coins', '70 Coins', '90 Coins', '100 Coins', '120 Coins', '140 Coins', '150 Coins', 'Try Again'];
+        const colors = ['#6d28d9', '#4c1d95', '#7c3aed', '#5b21b6', '#8b5cf6', '#4338ca', '#a78bfa', '#312e81'];
+
+        let currentAngle = 0;
+        let isSpinning = false;
+
+        function drawWheel() {
+            const numSegments = prizes.length;
+            const arcSize = (2 * Math.PI) / numSegments;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < numSegments; i++) {
+                const angle = currentAngle + i * arcSize;
+                
+                // Draw Slices
+                ctx.beginPath();
+                ctx.fillStyle = colors[i];
+                ctx.moveTo(128, 128);
+                ctx.arc(128, 128, 120, angle, angle + arcSize);
+                ctx.lineTo(128, 128);
+                ctx.fill();
+                ctx.strokeStyle = '#1e1b4b';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // Draw Texts
+                ctx.save();
+                ctx.translate(128, 128);
+                ctx.rotate(angle + arcSize / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 10px Arial";
+                ctx.fillText(prizes[i], 110, 4);
+                ctx.restore();
+            }
+
+            // Draw center ring
+            ctx.beginPath();
+            ctx.arc(128, 128, 18, 0, 2 * Math.PI);
+            ctx.fillStyle = '#facc15';
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // Initialize drawing
+        drawWheel();
+
+        // --- SPIN LOGIC (MANUAL) ---
+        let manualFreeSpin = true;
+        let pendingRewardCoins = 0;
+
+        async function spinManual() {
+            if (isSpinning) return;
+
+            // Checked if not free spin -> trigger Monetag ad before spinning
+            if (!manualFreeSpin) {
+                document.getElementById('spin-status').textContent = 'অ্যাড লোড হচ্ছে...';
+                const watched = await triggerAd();
+                if (!watched) {
+                    document.getElementById('spin-status').textContent = 'বিজ্ঞাপন সম্পন্ন করতে ব্যর্থ!';
+                    return;
+                }
+            }
+
+            isSpinning = true;
+            document.getElementById('btn-spin-manual').disabled = true;
+            document.getElementById('spin-status').textContent = 'ভাগ্য চাকা ঘুরছে...';
+
+            // User wins 50, 70, 90 or 100 coins (First 4 segments of prizes list)
+            const targetIndex = Math.floor(Math.random() * 4); // 50, 70, 90 or 100
+            pendingRewardCoins = parseInt(prizes[targetIndex]);
+
+            const numSegments = prizes.length;
+            const segmentAngle = (2 * Math.PI) / numSegments;
+            
+            // To point target segment at TOP (which is at angle 3 * Math.PI / 2)
+            const targetAngleOffset = (3 * Math.PI / 2) - (targetIndex * segmentAngle) - (segmentAngle / 2);
+            const totalRotation = (2 * Math.PI * 5) + targetAngleOffset; // 5 full spins + target
+
+            const startRotation = currentAngle % (2 * Math.PI);
+            const duration = 4000; // 4 seconds spin duration
+            const start = performance.now();
+
+            function animateSpin(timestamp) {
+                const elapsed = timestamp - start;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Cubic easing out function for smooth deceleration
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                currentAngle = startRotation + totalRotation * easeOut;
+                
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateSpin);
+                } else {
+                    isSpinning = false;
+                    document.getElementById('spin-status').textContent = `আপনি ${pendingRewardCoins} কয়েন জিতেছেন!`;
+                    
+                    // Show claim button
+                    document.getElementById('btn-spin-manual').classList.add('hidden');
+                    document.getElementById('btn-claim-manual').classList.remove('hidden');
+                }
+            }
+            requestAnimationFrame(animateSpin);
+        }
+
+        // Claim Reward handler for Manual Spin
+        async function claimManualReward() {
+            document.getElementById('spin-status').textContent = 'অ্যাড লোড হচ্ছে...';
+            
+            // Re-directs / loads monetag ad before claiming coins to main balance
+            const watched = await triggerAd();
+            if (watched) {
+                state.balance += pendingRewardCoins;
+                state.totalEarned += pendingRewardCoins;
+                saveState();
+                
+                // Reset buttons and stats
+                manualFreeSpin = false; // Next spin requires ad
+                pendingRewardCoins = 0;
+                document.getElementById('spin-status').textContent = 'কয়েন আপনার ব্যালেন্সে যোগ হয়েছে! পরবর্তী স্পিনের আগে অ্যাড প্লে হবে।';
+                
+                document.getElementById('btn-claim-manual').classList.add('hidden');
+                document.getElementById('btn-spin-manual').classList.remove('hidden');
+                document.getElementById('btn-spin-manual').disabled = false;
+            } else {
+                document.getElementById('spin-status').textContent = 'কয়েন ক্লেইম করতে পুনরায় বিজ্ঞাপন সম্পন্ন করুন।';
+            }
+        }
+
+        // --- AUTO SPIN LOOP ---
+        let autoSpinActive = false;
+
+        async function startAutoSpin() {
+            // Check limits
+            const limitPeriod = 28 * 60 * 60 * 1000;
+            const now = Date.now();
+            if (!state.autoSpinsStartTime) {
+                state.autoSpinsStartTime = now;
+            }
+            
+            if (state.autoSpinsCount >= 100) {
+                tg?.showPopup({ message: "দুঃখিত, আপনি পরবর্তী ২৮ ঘণ্টার অটো স্পিন লিমিট (১০০টি) অতিক্রম করেছেন!" });
+                return;
+            }
+
+            autoSpinActive = true;
+            document.getElementById('btn-auto-spin-start').disabled = true;
+            document.getElementById('btn-auto-spin-start').classList.add('opacity-50');
+            document.getElementById('btn-auto-spin-stop').disabled = false;
+            document.getElementById('btn-auto-spin-stop').classList.remove('opacity-50', 'bg-gray-800');
+            document.getElementById('btn-auto-spin-stop').classList.add('bg-red-700');
+
+            executeNextAutoSpin();
+        }
+
+        function stopAutoSpin() {
+            autoSpinActive = false;
+            document.getElementById('btn-auto-spin-start').disabled = false;
+            document.getElementById('btn-auto-spin-start').classList.remove('opacity-50');
+            document.getElementById('btn-auto-spin-stop').disabled = true;
+            document.getElementById('btn-auto-spin-stop').classList.add('opacity-50', 'bg-gray-800');
+            document.getElementById('btn-auto-spin-stop').classList.remove('bg-red-700');
+            document.getElementById('spin-status').textContent = 'অটো স্পিন বন্ধ করা হয়েছে।';
+        }
+
+        async function executeNextAutoSpin() {
+            if (!autoSpinActive) return;
+
+            // Limit check
+            if (state.autoSpinsCount >= 100) {
+                stopAutoSpin();
+                tg?.showPopup({ message: "অটো স্পিন সম্পন্ন। ২৮ ঘণ্টার লিমিট (১০০টি) পূর্ণ হয়েছে!" });
+                return;
+            }
+
+            document.getElementById('spin-status').textContent = 'অটো স্পিন: বিজ্ঞাপন লোড হচ্ছে (১/২)...';
+            // Play back-to-back 2 ads
+            await triggerBackToBackAds(2);
+
+            document.getElementById('spin-status').textContent = 'অটো স্পিন: ঘুরছে...';
+            
+            // Random index
+            const targetIndex = Math.floor(Math.random() * 4);
+            const winCoins = parseInt(prizes[targetIndex]);
+            
+            const numSegments = prizes.length;
+            const segmentAngle = (2 * Math.PI) / numSegments;
+            const targetAngleOffset = (3 * Math.PI / 2) - (targetIndex * segmentAngle) - (segmentAngle / 2);
+            const totalRotation = (2 * Math.PI * 3) + targetAngleOffset;
+
+            const startRotation = currentAngle % (2 * Math.PI);
+            const duration = 2000; // Accelerated 2s auto spin for efficiency
+            const start = performance.now();
+
+            function animateAuto(timestamp) {
+                const elapsed = timestamp - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                currentAngle = startRotation + totalRotation * easeOut;
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateAuto);
+                } else {
+                    // Claim automatically
+                    state.balance += winCoins;
+                    state.totalEarned += winCoins;
+                    state.autoSpinsCount++;
+                    saveState();
+                    
+                    document.getElementById('spin-status').textContent = `অটো ক্লেইম সফল: +${winCoins} Coins`;
+                    
+                    // Loop to next auto spin after 1.5 seconds delay
+                    setTimeout(() => {
+                        if (autoSpinActive) {
+                            executeNextAutoSpin();
+                        }
+                    }, 1500);
+                }
+            }
+            requestAnimationFrame(animateAuto);
+        }
+
+        // --- DAILY REWARD SYSTEM ---
+        function checkDailyStatus() {
+            const now = new Date();
+            // Get string representing current date in UTC
+            const todayUtcStr = `${now.getUTCFullYear()}-${now.getUTCMonth() + 1}-${now.getUTCDate()}`;
+            
+            const daysGrid = [10, 20, 30, 50, 70, 90, 100];
+            
+            // Find active claim day
+            let lastClaim = state.lastDailyClaimDate; // Saved as UTC string
+            let currentActiveDayIndex = 0; // default Day 1
+
+            if (lastClaim) {
+                const diffTime = Math.abs(new Date(todayUtcStr) - new Date(lastClaim));
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (todayUtcStr === lastClaim) {
+                    // Already claimed today
+                    currentActiveDayIndex = -1;
+                } else if (diffDays === 1) {
+                    // Continuous streak
+                    // Get index from previous state (need custom calculation or simple streak cycle)
+                    const prevStreak = parseInt(localStorage.getItem('streak_day_count') || "0");
+                    currentActiveDayIndex = prevStreak % 7;
+                } else {
+                    // Streak broken, reset to Day 1
+                    currentActiveDayIndex = 0;
+                }
+            }
+
+            // Update UI highlights
+            for (let i = 1; i <= 7; i++) {
+                const cell = document.getElementById(`day-cell-${i}`);
+                if (i - 1 === currentActiveDayIndex) {
+                    cell.className = "bg-purple-900/60 border-2 border-purple-500 p-2 rounded-xl scale-105 transition shadow-lg shadow-purple-500/20";
+                } else {
+                    cell.className = "bg-slate-900/40 border border-purple-900/30 p-2 rounded-xl opacity-60";
+                    if (i === 7) cell.className = "bg-slate-900/40 border border-purple-900/30 p-2 rounded-xl col-span-2 flex items-center justify-between px-3 opacity-60";
+                }
+            }
+
+            const claimBtn = document.getElementById('btn-claim-daily');
+            if (currentActiveDayIndex === -1) {
+                claimBtn.disabled = true;
+                claimBtn.textContent = "ALREADY CLAIMED TODAY";
+                claimBtn.className = "w-full bg-gray-800 text-gray-500 py-3 rounded-xl font-bold text-sm cursor-not-allowed";
+            } else {
+                claimBtn.disabled = false;
+                claimBtn.textContent = "CLAIM DAILY REWARD";
+                claimBtn.className = "w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 py-3 rounded-xl font-bold text-sm text-white transition active:scale-95 flex items-center justify-center gap-1.5";
+            }
+        }
+
+        async function claimDailyReward() {
+            const now = new Date();
+            const todayUtcStr = `${now.getUTCFullYear()}-${now.getUTCMonth() + 1}-${now.getUTCDate()}`;
+            
+            // Check reward
+            const streakCount = parseInt(localStorage.getItem('streak_day_count') || "0");
+            const activeIndex = streakCount % 7;
+            const rewards = [10, 20, 30, 50, 70, 90, 100];
+            const prize = rewards[activeIndex];
+
+            // Trigger Monetag link ad
+            const watched = await triggerAd();
+            if (watched) {
+                state.balance += prize;
+                state.totalEarned += prize;
+                state.lastDailyClaimDate = todayUtcStr;
+                localStorage.setItem('streak_day_count', (streakCount + 1).toString());
+                saveState();
+                
+                tg?.showPopup({ message: `অভিনন্দন! আপনি আজকের ডেইলি রিওয়ার্ড +${prize} কয়েন সফলভাবে ক্লেইম করেছেন!` });
+                checkDailyStatus();
+            }
+        }
+
+        // --- TASKS PAGE LOGIC ---
+        async function startSingleTask() {
+            if (state.tasksCount >= 500) {
+                tg?.showPopup({ message: "আপনি আপনার ২৮ ঘণ্টার সর্বোচ্চ টাস্ক লিমিট (৫০০) অতিক্রম করেছেন!" });
+                return;
+            }
+
+            const watched = await triggerAd();
+            if (watched) {
+                // Task Reward
+                const prize = 70;
+                state.balance += prize;
+                state.totalEarned += prize;
+                state.tasksCount++;
+                
+                if (!state.tasksStartTime) {
+                    state.tasksStartTime = Date.now();
+                }
+                saveState();
+                tg?.showPopup({ message: `টাস্ক সম্পন্ন! আপনি +${prize} কয়েন পেয়েছেন।` });
+            }
+        }
+
+        let autoTaskActive = false;
+        async function startAutoTask() {
+            if (state.tasksCount >= 500) {
+                tg?.showPopup({ message: "টাস্ক লিমিট পূর্ণ হয়েছে!" });
+                return;
+            }
+
+            autoTaskActive = true;
+            document.getElementById('btn-auto-task-start').classList.add('hidden');
+            document.getElementById('btn-auto-task-stop').classList.remove('hidden');
+
+            runAutoTaskLoop();
+        }
+
+        function stopAutoTask() {
+            autoTaskActive = false;
+            document.getElementById('btn-auto-task-start').classList.remove('hidden');
+            document.getElementById('btn-auto-task-stop').classList.add('hidden');
+        }
+
+        async function runAutoTaskLoop() {
+            if (!autoTaskActive) return;
+
+            if (state.tasksCount >= 500) {
+                stopAutoTask();
+                tg?.showPopup({ message: "টাস্ক লিমিট পূর্ণ হওয়ায় অটো টাস্ক সম্পন্ন হয়েছে!" });
+                return;
+            }
+
+            // Play 2 back-to-back ads
+            await triggerBackToBackAds(2);
+
+            // Reward
+            const prize = 70;
+            state.balance += prize;
+            state.totalEarned += prize;
+            state.tasksCount++;
+            
+            if (!state.tasksStartTime) {
+                state.tasksStartTime = Date.now();
+            }
+            saveState();
+
+            // Show Successful alert (custom fast alert banner)
+            tg?.showPopup({
+                title: "টাস্ক সম্পন্ন",
+                message: "Auto Watch সম্পন্ন হয়েছে এবং +৭০ কয়েন ব্যালেন্সে যোগ হয়েছে। পরবর্তী টাস্ক চালু হচ্ছে...",
+            });
+
+            setTimeout(() => {
+                if (autoTaskActive) {
+                    runAutoTaskLoop();
+                }
+            }, 2000);
+        }
+
+        // --- REFERRAL SYSTEM REDEEM ---
+        function copyReferralLink() {
+            const input = document.getElementById('ref-link-input');
+            input.select();
+            input.setSelectionRange(0, 99999); // For mobile devices
+            navigator.clipboard.writeText(input.value);
+            tg?.showPopup({ message: "রেফারেল লিংক সফলভাবে কপি করা হয়েছে!" });
+        }
+
+        function redeemReferralCode() {
+            const input = document.getElementById('ref-code-input').value.trim();
+            if (!input) {
+                tg?.showPopup({ message: "অনুগ্রহ করে একটি সঠিক ইনভাইট কোড লিখুন।" });
+                return;
+            }
+
+            if (input === userId) {
+                tg?.showPopup({ message: "আপনি নিজের রেফারেল কোড নিজে ব্যবহার করতে পারবেন না!" });
+                return;
+            }
+
+            if (state.hasUsedReferralCode) {
+                tg?.showPopup({ message: "আপনি ইতিপূর্বেই একটি রেফারেল কোড ব্যবহার করেছেন!" });
+                return;
+            }
+
+            // Redeem rewards
+            state.balance += 400;
+            state.totalEarned += 400;
+            state.hasUsedReferralCode = true;
+            saveState();
+
+            tg?.showPopup({ message: "অভিনন্দন! রেফার কোড সফল হয়েছে। আপনি +৪০০ কয়েন বোনাস পেয়েছেন।" });
+        }
+
+        // --- WALLET / EXCHANGE / WITHDRAWAL CONDITIONS ---
+        function updateWithdrawPlaceholder() {
+            const method = document.getElementById('withdraw-method').value;
+            const inputLabel = document.getElementById('withdraw-input-label');
+            const input = document.getElementById('withdraw-account-input');
+
+            if (method === 'usdt') {
+                inputLabel.textContent = "USDT (TRC-20) ওয়ালেট অ্যাড্রেস";
+                input.placeholder = "TRC20 Wallet Address (TXxxxxxxxx...)";
+            } else if (method === 'nagad') {
+                inputLabel.textContent = "নগদ মোবাইল নম্বর";
+                input.placeholder = "01XXXXXXXXX";
+            } else {
+                inputLabel.textContent = "বিকাশ মোবাইল নম্বর";
+                input.placeholder = "01XXXXXXXXX";
+            }
+        }
+
+        // Custom task requirements for Wallet Withdraw / Exchange
+        let adTaskTarget = 0;
+        let adTaskCurrent = 0;
+        let pendingActionCallback = null;
+
+        function startRequiredAdTaskFlow(targetTasksCount, onCompleteCallback) {
+            adTaskTarget = targetTasksCount;
+            adTaskCurrent = 0;
+            pendingActionCallback = onCompleteCallback;
+
+            document.getElementById('ad-task-title').textContent = `রিকোয়ার্ড অ্যাড টাস্ক সম্পন্ন করুন (${targetTasksCount}টি)`;
+            document.getElementById('ad-task-progress').textContent = `${adTaskCurrent} / ${adTaskTarget}`;
+            document.getElementById('ad-task-modal').classList.remove('hidden');
+        }
+
+        async function playNextAdTask() {
+            const playBtn = document.getElementById('btn-play-ad-task');
+            playBtn.disabled = true;
+            playBtn.textContent = "Loading Ads...";
+
+            // Play back-to-back 2 Monetag ads
+            await triggerBackToBackAds(2);
+
+            adTaskCurrent++;
+            document.getElementById('ad-task-progress').textContent = `${adTaskCurrent} / ${adTaskTarget}`;
+            
+            playBtn.disabled = false;
+            playBtn.textContent = `Watch Next Ad (2 Ads)`;
+
+            if (adTaskCurrent >= adTaskTarget) {
+                // Flow Complete
+                document.getElementById('ad-task-modal').classList.add('hidden');
+                if (pendingActionCallback) {
+                    pendingActionCallback();
+                }
+            }
+        }
+
+        // Attempt Withdrawal Process
+        function attemptWithdraw() {
+            const method = document.getElementById('withdraw-method').value;
+            const account = document.getElementById('withdraw-account-input').value.trim();
+            const minLimit = 10000000; // 1 Crore coins
+
+            if (!account) {
+                tg?.showPopup({ message: "অনুগ্রহ করে আপনার অ্যাকাউন্ট নম্বর বা ওয়ালেট অ্যাড্রেস লিখুন।" });
+                return;
+            }
+
+            if (state.balance < minLimit) {
+                tg?.showPopup({ message: "দুঃখিত! উইথড্রর জন্য আপনার ব্যালেন্সে নূন্যতম ১০,০০০,০০০ (১ কোটি) কয়েন থাকতে হবে।" });
+                return;
+            }
+
+            // Condition 1: Must have at least 7 referrals
+            if (state.referredCount < 7) {
+                tg?.showPopup({ message: "উইথড্র করতে আপনাকে অবশ্যই নূন্যতম ৭ জন ইউজারকে রেফার করতে হবে।" });
+                return;
+            }
+
+            // Condition 2: Watch 10 ad tasks (2 ads each)
+            startRequiredAdTaskFlow(10, () => {
+                // Deduct Balance and Submit
+                state.balance -= minLimit;
+                saveState();
+                tg?.showPopup({
+                    title: "উইথড্র রিকোয়েস্ট সফল!",
+                    message: `আপনার ১০,০০০ BDT / ১ USDT পেমেন্ট রিকোয়েস্ট সফলভাবে সাবমিট হয়েছে। আগামী ২৪-৭২ ঘণ্টার মধ্যে সম্পন্ন হবে।`
+                });
+                document.getElementById('withdraw-account-input').value = '';
+            });
+        }
+
+        // Attempt BDT Exchange Process
+        function attemptExchange() {
+            const inputVal = parseInt(document.getElementById('exchange-coins-input').value);
+            
+            if (isNaN(inputVal) || inputVal < 10000) {
+                tg?.showPopup({ message: "অনুগ্রহ করে নূন্যতম ১০,০০০ এবং এর গুণিতক হিসেবে কয়েন লিখুন।" });
+                return;
+            }
+
+            if (inputVal % 10000 !== 0) {
+                tg?.showPopup({ message: "কয়েন অবশ্যই ১০,০০০-এর গুণিতক হতে হবে (যেমন: ১০০০০, ২০০০০, ৩০০০০)।" });
+                return;
+            }
+
+            if (state.balance < inputVal) {
+                tg?.showPopup({ message: "দুঃখিত! আপনার ব্যালেন্সে পর্যাপ্ত কয়েন নেই।" });
+                return;
+            }
+
+            // Requires 5 ad tasks (2 ads each)
+            startRequiredAdTaskFlow(5, () => {
+                // Calculate simulated rate conversion (10,000 coins = 5 BDT)
+                const convertedBDT = (inputVal / 10000) * 5;
+                state.balance -= inputVal;
+                saveState();
+                
+                tg?.showPopup({
+                    title: "এক্সচেঞ্জ সফল!",
+                    message: `${inputVal.toLocaleString()} Coins সফলভাবে ${convertedBDT} BDT-তে কনভার্ট হয়েছে এবং উইথড্র ব্যালেন্সে যোগ হয়েছে।`
+                });
+                document.getElementById('exchange-coins-input').value = '';
+            });
+        }
+
+        // --- PAGE INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            switchTab('home'); // Load default home tab
+            checkDailyStatus();
+        });
+    </script>
+</body>
+</html>
